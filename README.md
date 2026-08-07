@@ -135,26 +135,26 @@ To visualize the integration of these highly complex systems, **Figure 3** elega
 
 ```mermaid
 graph TD
-    subgraph Bank Edge Node A (Region 1)
+    subgraph EdgeA ["Bank Edge Node A (Region 1)"]
         NIC1[RoCEv2 NIC] -->|DPDK Kernel Bypass| PMD1[Poll Mode Driver]
         PMD1 -->|Zero-Copy Ring Buffer| LTA1[libtorch Aggregator Node 1]
         LTA1 -.->|NUMA Node 0 Strict Affinity| Mem1[(Local DDR5)]
     end
 
-    subgraph Bank Edge Node B (Region 2)
+    subgraph EdgeB ["Bank Edge Node B (Region 2)"]
         NIC2[RoCEv2 NIC] -->|DPDK Kernel Bypass| PMD2[Poll Mode Driver]
         PMD2 -->|Zero-Copy Ring Buffer| LTA2[libtorch Aggregator Node 2]
         LTA2 -.->|NUMA Node 0 Strict Affinity| Mem2[(Local DDR5)]
     end
 
-    subgraph Global Aggregation Hub iXAfrica NBO1
+    subgraph Hub ["Global Aggregation Hub iXAfrica NBO1"]
         SW[Data Center Switch with PFC and ECN]
         NIC3[RoCEv2 NIC] -->|DPDK Pipeline| PMD3[Poll Mode Driver]
         PMD3 --> LTM[libtorch Master Aggregator]
         LTM --> SGX[(Intel SGX Enclave: zk-SNARK Verification and SMPC Recombination)]
     end
 
-    subgraph Tier-1 Bank Edge Node
+    subgraph Tier1 ["Tier-1 Bank Edge Node"]
         GPU[(AMD MI300X / Intel Gaudi 3: Heavy Graph Convolutions)]
         LTA1 --> GPU
     end
@@ -168,8 +168,8 @@ graph TD
     classDef hub fill:#e1f5fe,stroke:#0277bd,stroke-width:2px;
     classDef net fill:#fff3e0,stroke:#e65100,stroke-width:2px;
     
-    class Bank Edge Node A,Bank Edge Node B edge;
-    class Global Aggregation Hub hub;
+    class EdgeA,EdgeB edge;
+    class Hub hub;
     class SW,NIC1,NIC2,NIC3 net;
 ```
 **Figure 3: Comprehensive Federated Network Architecture and Global Aggregation Flow**
