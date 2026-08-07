@@ -42,14 +42,14 @@ The operational environment for Kenyan financial institutions is strictly govern
 | Card-Specific Fraud Losses | KES 15.50 million | KES 263.29 million | +1,598.65% |
 | Identity Theft / Impersonation Losses | KES 33.16 million | KES 199.00 million | +500.12% |
 
-Source: [1] Central Bank of Kenya, "Bank Supervision Annual Report 2024" and "Financial Sector Stability Report 2024," Nairobi, 2024. [Online]. Available: https://www.centralbank.go.ke/reports/bank-supervision-annual-reports/
+Source: [1] Central Bank of Kenya, "Bank Supervision Annual Report 2024" and "Financial Sector Stability Report 2024," Nairobi, 2024. [Online]. Available: https://www.centralbank.go.ke/reports/bank-supervision-and-banking-sector-reports/
 
 ### 1.2 Judicial Precedent: The DTB and Safaricom Case
 
 This strict regulatory stance has been forcefully validated by the Kenyan judicial system in recent months. In a landmark judicial decision delivered on July 13, 2026 by the High Court of Kenya at Machakos, a commercial bank (Diamond Trust Bank, commonly known as DTB) and a major telecommunications provider (Safaricom) were held strictly liable and had specific financial liability apportioned (Safaricom 60%, DTB 40%) for a KES 4.42 million digital fraud loss in a highly coordinated SIM swap attack [2]. The court systematically rejected the historical automated defense mechanism traditionally utilized by the financial sector, which previously argued that because a transaction utilized the correct personal identification number (PIN) and occurred within standard system withdrawal limits, the institution was absolved of any legal liability. Instead, the judicial ruling explicitly established that the sheer velocity and highly anomalous structural pattern of the illicit transactions constituted a clearly detectable fraud signature that should have triggered immediate institutional intervention. Consequently, financial institutions are now legally obligated to deploy predictive, behavior-aware anomaly detection architectures rather than merely relying on reactive, rule-based blocking systems. The legal precedent effectively shifts the burden of proof, demanding that banks understand the contextual mathematical structure of all transactions to identify sophisticated laundering loops before funds irrevocably exit the institutional perimeter.
 
 **Legal Reference**:
-[2] High Court of Kenya at Machakos, "Diamond Trust Bank vs Safaricom," July 13, 2026. [Online]. Available: https://kenyalaw.org/caselaw/cases/view/DTB-Safaricom-2026
+[2] Tech-Ish, "Court Rules a Correct PIN Is Not a Defence: Safaricom and DTB to Pay KES 4.4M SIM Swap Victim," July 13, 2026. [Online]. Available: https://tech-ish.com/2026/07/13/safaricom-dtb-sim-swap-ruling/
 
 ## 2. Mathematical Framework and Graph Topology
 
