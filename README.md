@@ -131,7 +131,7 @@ flowchart TD
 
 ## 4. Federated Orchestration and Network Architecture
 
-To visualize the integration of these highly complex systems, **Figure 3** elegantly maps the precise flow of packets from the banking network edge directly into the global aggregation hub. It highlights the explicit use of DPDK kernel bypass mechanisms, strict NUMA affinity protocols, and the deployment of the libtorch C++ aggregation engine over the loss-less RoCEv2 fabric.
+To visualize the integration of these highly complex systems, **Figure 3** elegantly maps the precise flow of packets from the banking network edge directly into the global aggregation hub. It highlights the explicit use of DPDK kernel bypass mechanisms, strict NUMA affinity protocols, and the deployment of the libtorch C++ aggregation engine over the loss-less RoCEv2 primary fabric. In the event of a physical primary circuit failure, the architecture seamlessly falls back to the iWARP protocol, ensuring highly reliable gradient delivery over standard lossy TCP/IP backup WAN circuits without requiring hardware changes.
 
 ```mermaid
 flowchart TD
