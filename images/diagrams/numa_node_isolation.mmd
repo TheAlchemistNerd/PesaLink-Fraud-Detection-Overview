@@ -1,14 +1,18 @@
 %%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
-flowchart LR
-    subgraph N0 [NUMA Node 0 - Training Plane]
-        direction TD
-        T1[AMD AOTriton / HPU Graph AOT] --> T2[libtorch Training Loop]
-        T2 --> T3[Export ONNX Weights to Node 1 Pool]
-    end
-    subgraph N1 [NUMA Node 1 - Inference Plane]
-        direction TD
-        I1[DPDK RX Driver - Zero-Copy] --> I2[libtriton.so - NVIDIA Triton]
-        I2 --> I3[ONNX Runtime / OpenVINO Backend]
-        I3 --> I4[Inference Output]
+flowchart TD
+    subgraph Wrap [ ]
+        direction LR
+        subgraph N0 [NUMA Node 0 - Training Plane]
+            direction TD
+            T1[AMD AOTriton / HPU Graph AOT] --> T2[libtorch Training Loop]
+            T2 --> T3[Export ONNX Weights to Node 1 Pool]
+        end
+        subgraph N1 [NUMA Node 1 - Inference Plane]
+            direction TD
+            I1[DPDK RX Driver - Zero-Copy] --> I2[libtriton.so - NVIDIA Triton]
+            I2 --> I3[ONNX Runtime / OpenVINO Backend]
+            I3 --> I4[Inference Output]
+        end
     end
     T3 -..->|Atomic ONNX hot-swap| I2
+    style Wrap fill:none,stroke:none,color:transparent
