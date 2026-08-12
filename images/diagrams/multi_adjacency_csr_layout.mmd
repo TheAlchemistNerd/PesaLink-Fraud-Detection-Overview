@@ -1,0 +1,14 @@
+flowchart TD
+    subgraph Multi-Adjacency Block-Relational CSR Layout
+        Node1((Node A)) -->|r=1: PESALINK| Node2((Node B))
+        Node1 -->|r=1: PESALINK| Node3((Node C))
+        Node1 -->|r=2: MPESA_TO_BANK| Node4((Node D))
+        Node1 -->|r=3: HARDWARE_BIND| Node5((Node E))
+    end
+    subgraph Contiguous Memory Alignment
+        Mem1[Block r=1: B, C]
+        Mem2[Block r=2: D]
+        Mem3[Block r=3: E]
+        Mem1 --> Mem2
+        Mem2 --> Mem3
+    end

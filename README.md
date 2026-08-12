@@ -86,22 +86,7 @@ If we assume the federated system were to hypothetically continue to strictly th
 
 To successfully sustain sub-50 millisecond inference latency across the national grid, traditional Compressed Sparse Row memory architectures are completely eradicated and replaced entirely with a highly optimized Multi-Adjacency Block-Relational CSR layout. Standard single-relational memory arrays heavily require conditional software branching to separate completely different transaction types, which inadvertently invalidates CPU branch prediction states and totally stalls vector processing lanes on the central processing unit. The advanced Block-Relational format mathematically eliminates this severe computational bottleneck by systematically grouping contiguous target neighbor vectors sorted internally by their exact relation identifiers. This innovative layout explicitly enables perfectly deterministic, linear vector loading directly into massive one-gigabyte hugepages securely allocated via the Data Plane Development Kit kernel bypass framework, exactly as visualized in **Figure 1** below. By formally introducing a continuous-time dynamic graph mathematical formulation, the precise temporal evolution of all financial relationships is captured explicitly by the neural network. The temporal graph is rigorously defined as a sequence of discrete graph snapshots or as a continuous, unbounded stream of time-stamped interaction edges. This continuous temporal representation is absolutely paramount for successfully detecting rapid velocity structuring attacks, wherein malicious syndicate actors execute a high volume of tiny transactions within microscopic time windows to evade detection. The direct integration of temporal dynamics structurally requires augmenting the static adjacency matrix with a continuously time-decaying weight matrix. To accurately capture temporal dynamics natively inside the deep neural network architecture, continuous-time sinusoidal Fourier embeddings are applied directly to the temporal edges, effectively mapping the exact transaction timestamp into the latent manifold space for deep analysis.
 
-```mermaid
-flowchart TD
-    subgraph Multi-Adjacency Block-Relational CSR Layout
-        Node1((Node A)) -->|r=1: PESALINK| Node2((Node B))
-        Node1 -->|r=1: PESALINK| Node3((Node C))
-        Node1 -->|r=2: MPESA_TO_BANK| Node4((Node D))
-        Node1 -->|r=3: HARDWARE_BIND| Node5((Node E))
-    end
-    subgraph Contiguous Memory Alignment
-        Mem1[Block r=1: B, C]
-        Mem2[Block r=2: D]
-        Mem3[Block r=3: E]
-        Mem1 --> Mem2
-        Mem2 --> Mem3
-    end
-```
+![Multi-Adjacency Block-Relational CSR Layout](images/diagrams/multi_adjacency_csr_layout.png)
 **Figure 1: Multi-Adjacency Block-Relational CSR Layout**
 
 ## 3. Hardware Acceleration and Edge Software
@@ -114,64 +99,14 @@ The overarching fraud detection architecture aggressively utilizes Advanced Micr
 
 To proactively prevent the real-time inference computational path from actively competing with the background federated training algorithms for limited memory bandwidth, the operating system enforces extremely strict Non-Uniform Memory Access topology-aware pool segregation at the lowest kernel level. To completely prevent standard scheduler jitter and hardware interrupt handling from severely interrupting the critical, latency-sensitive inference path, the Linux kernel is securely booted with incredibly strict central processing unit isolation parameters. The two massive hardware sockets of the host enterprise server are explicitly assigned mutually exclusive operational roles to guarantee stability. NUMA Node 0 is permanently allocated to raw transaction graph construction, local mathematical backpropagation, active kernel compilation, and highly complex gradient sparsification routines. The operating system proactively pre-allocates gigabyte-sized huge pages exclusively on Node 0 to prevent fragmentation. Conversely, NUMA Node 1 is exclusively allocated to the NVIDIA Triton Inference Server, the execution backend frameworks, and processing live transaction feature vectors. The memory Pool B operates strictly in read-only mode during active live inference and is actively written to only during an atomic, zero-downtime hot-swap operation. The central server process is explicitly pinned directly to the hardware to bind the memory allocator strictly to Node 1 huge pages. Cross-node memory contamination is systematically prevented at two distinct architectural levels. First, the Linux kernel's rigorous memory policy completely prevents the training allocator from improperly falling back to Node 1 under severe out-of-memory scenarios via strict control group memory limits. Second, the deep learning caching allocator is totally isolated from the live inference process via completely separate multiprocessing shared memory arenas, as structurally illustrated in **Figure 2**.
 
-```mermaid
-flowchart TD
-    subgraph NUMA Node 0 - Training Plane
-        T1[AMD AOTriton / HPU Graph AOT] --> T2[libtorch Training Loop]
-        T2 --> T3[Export ONNX Weights to Node 1 Pool]
-    end
-    subgraph NUMA Node 1 - Inference Plane
-        I1[DPDK RX Driver - Zero-Copy] --> I2[libtriton.so - NVIDIA Triton]
-        I2 --> I3[ONNX Runtime / OpenVINO Backend]
-        I3 --> I4[Inference Output]
-    end
-    T3 -..->|Atomic ONNX hot-swap| I2
-```
+![NUMA Node Isolation](images/diagrams/numa_node_isolation.png)
 **Figure 2: NUMA Node Isolation and Inference Data Plane Architecture**
 
 ## 4. Federated Orchestration and Network Architecture
 
 To visualize the integration of these highly complex systems, **Figure 3** elegantly maps the precise flow of packets from the banking network edge directly into the global aggregation hub. It highlights the explicit use of DPDK kernel bypass mechanisms, strict NUMA affinity protocols, and the deployment of the libtorch C++ aggregation engine over the loss-less RoCEv2 primary fabric. In the event of a physical primary circuit failure, the architecture seamlessly falls back to the iWARP protocol, ensuring highly reliable gradient delivery over standard lossy TCP/IP backup WAN circuits without requiring hardware changes.
 
-```mermaid
-flowchart TD
-    subgraph EdgeA ["Bank Edge Node A (Region 1)"]
-        NIC1[RoCEv2 NIC] -->|DPDK Kernel Bypass| PMD1[Poll Mode Driver]
-        PMD1 -->|Zero-Copy Ring Buffer| LTA1[libtorch Aggregator Node 1]
-        LTA1 -.->|NUMA Node 0 Strict Affinity| Mem1[(Local DDR5)]
-    end
-
-    subgraph EdgeB ["Bank Edge Node B (Region 2)"]
-        NIC2[RoCEv2 NIC] -->|DPDK Kernel Bypass| PMD2[Poll Mode Driver]
-        PMD2 -->|Zero-Copy Ring Buffer| LTA2[libtorch Aggregator Node 2]
-        LTA2 -.->|NUMA Node 0 Strict Affinity| Mem2[(Local DDR5)]
-    end
-
-    subgraph Hub ["Global Aggregation Hub iXAfrica NBO1"]
-        SW[Data Center Switch with PFC and ECN]
-        NIC3[RoCEv2 NIC] -->|DPDK Pipeline| PMD3[Poll Mode Driver]
-        PMD3 --> LTM[libtorch Master Aggregator]
-        LTM --> SGX[(Intel SGX Enclave: zk-SNARK Verification and SMPC Recombination)]
-    end
-
-    subgraph Tier1 ["Tier-1 Bank Edge Node"]
-        GPU[(AMD MI300X / Intel Gaudi 3: Heavy Graph Convolutions)]
-        LTA1 --> GPU
-    end
-
-    NIC1 <==>|WAN: RDMA over Converged Ethernet| SW
-    NIC2 <==>|WAN: RDMA over Converged Ethernet| SW
-    SW <==> NIC3
-
-    %% Explicit Styling Directives
-    classDef edge fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    classDef hub fill:#e1f5fe,stroke:#0277bd,stroke-width:2px;
-    classDef net fill:#fff3e0,stroke:#e65100,stroke-width:2px;
-    
-    class EdgeA,EdgeB edge;
-    class Hub hub;
-    class SW,NIC1,NIC2,NIC3 net;
-```
+![Federated Network Architecture](images/diagrams/federated_network_architecture.png)
 **Figure 3: Comprehensive Federated Network Architecture and Global Aggregation Flow**
 
 ### 4.1 Temporal Decay Asynchronous Federated Averaging
