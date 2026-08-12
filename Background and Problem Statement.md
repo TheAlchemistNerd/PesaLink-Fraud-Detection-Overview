@@ -90,7 +90,9 @@ A typical retail transaction carries the following data fields:
 
 When the full corpus of PesaLink transactions is modelled mathematically, the payment network becomes a **directed, temporal, heterogeneous multi-relational graph**, formally defined as:
 
-$$\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathcal{R}, \mathbf{X}, \mathbf{Y}, T)$$
+$$
+\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathcal{R}, \mathbf{X}, \mathbf{Y}, T)
+$$
 
 where each component carries both a mathematical and a business interpretation:
 
@@ -120,13 +122,15 @@ Edges encode **relationships** between nodes. In PesaLink, edges are directed (m
 | **Device-Account binding** | $e_{ad}^{\text{uses}}$ | Account $v_a$ was accessed using device $v_d$ |
 | **Session-Account binding** | $e_{as}^{\text{initiates}}$ | Account $v_a$ initiated a USSD session $v_s$ |
 | **Terminal-Account binding** | $e_{at}^{\text{withdraws}}$ | Account $v_a$ performed a cash withdrawal at terminal $v_t$ |
-| **IP-Account binding** | $e_{an}^{\text{connects\_from}}$ | Account $v_a$ was accessed from IP subnet $v_n$ |
+| **IP-Account binding** | $e_{an}^{\text{connects_from}}$ | Account $v_a$ was accessed from IP subnet $v_n$ |
 
 Each transfer edge $e_{ij}$ carries an **edge feature vector**:
 
-$$\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since\_last}}, \text{channel\_code}, \text{sequence\_rank}]$$
+$$
+\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since_last}}, \text{channel_code}, \text{sequence_rank}]
+$$
 
-where $\Delta t_{\text{since\_last}}$ is the time elapsed since the previous transaction from the same source node, a critical temporal feature for detecting **velocity attacks** (automated high-frequency transfers designed to exhaust an account balance before fraud is detected).
+where $\Delta t_{\text{since_last}}$ is the time elapsed since the previous transaction from the same source node, a critical temporal feature for detecting **velocity attacks** (automated high-frequency transfers designed to exhaust an account balance before fraud is detected).
 
 #### 3.2.3 The Node Feature Matrix $\mathbf{X}$: "What do we know about each entity?"
 
@@ -250,7 +254,7 @@ The following nine scenarios span the full breadth of PesaLink activity, from ro
   - $r_1, r_2, r_3$ have degree centrality = 0 in prior graph snapshots (dormant).
   - The $k$-hop shortest path $d(\text{Bernard}, r_i)$ = ∞ in all prior snapshots.
   - Amounts: KES 390K, 380K, 199K, deliberately structured below the KES 500K enhanced scrutiny threshold.
-- **Velocity signature**: $\Delta t_{\text{since\_last}}$ for Bernard's account = 18 days (he transacts infrequently). The inter-transaction time within this fraud burst = 90s and 160s, an extreme temporal compression against the historical baseline.
+- **Velocity signature**: $\Delta t_{\text{since_last}}$ for Bernard's account = 18 days (he transacts infrequently). The inter-transaction time within this fraud burst = 90s and 160s, an extreme temporal compression against the historical baseline.
 - **2-hop neighbourhood analysis**: At $t_0 + 370\text{s}$, the 2-hop neighbourhood of $v_{\text{Bernard}}$ suddenly includes three new dormant leaf nodes connected via high-amount edges, structurally indistinguishable from a mule network aggregation target. The R-GCN flags this as a high-anomaly embedding.
 - **What a single-bank rule misses**: Each individual transfer (KES 390K, 380K, 199K) is below the automated blocking threshold. The rule system sees three "valid" transactions. The GNN sees a new device binding at $t_0$, a velocity explosion from $\Delta t = 18\ \text{days}$ to $\Delta t = 90\ \text{seconds}$, and three structural links to zero-history nodes, collectively a known fraud motif.
 
@@ -282,7 +286,7 @@ Each mule account $m_i$ sends a single transfer to one of two "collection" accou
 **Graph-theoretic description**:
 - **New counterparty edges**: $e_{\text{Collins} \to \text{Daniel}}^{\text{transfer}}$ and $e_{\text{Collins} \to \text{FriendAcct}}^{\text{transfer}}$, both recipient nodes have shortest-path distance $d > 1$ from $v_{\text{Collins}}$ in prior history (never directly transacted before, though Collins may share 2-hop neighbours with Daniel via other family transactions).
 - **Device consistency** (key distinction from fraud): The device node $v_{d_C}$ (Collins's regular Samsung, IMEI stable for 3 years) is unchanged. There is no device substitution event. The same IP subnet and geolocation cell are observed.
-- **Velocity anomaly**: $\Delta t_{\text{since\_last}} = 4\ \text{days}$ → two transfers within 8 minutes, a compression from Collins's normal behaviour. The velocity score spikes.
+- **Velocity anomaly**: $\Delta t_{\text{since_last}} = 4\ \text{days}$ → two transfers within 8 minutes, a compression from Collins's normal behaviour. The velocity score spikes.
 - **Amount anomaly**: KES 150,000 and KES 80,000 are significantly above Collins's 30-day average transaction size of KES 22,000.
 - **Why this could score highly for fraud**: New counterparties + velocity compression + above-average amounts. A rule-based system would almost certainly block or flag these transfers.
 - **Why the GNN should not classify it as fraud**: The 2-hop subgraph reveals that Daniel's account is connected (via prior transactions) to other nodes in Collins's neighbourhood, family members who share a common transaction history. The device node $v_{d_C}$ has zero anomaly (no substitution). The amounts, while large, are within the account's historical maximum (Collins made a KES 200,000 property deposit 14 months ago). The GNN's attention mechanism, conditioned on the full neighbourhood embedding, suppresses the false positive by weighing the device stability and 2-hop relationship against the velocity signal.
@@ -382,13 +386,17 @@ Furthermore, PesaLink transactions exhibit **extreme class imbalance**: fraudule
 
 Graph Neural Networks (GNNs) directly address the relational blindness of tabular models. By operating on the transaction graph $\mathcal{G}$, a GNN propagates information between structurally connected nodes through **message passing**, each node aggregates representations from its neighbourhood:
 
-$$h_v^{(k)} = \sigma\left(W^{(k)} \cdot \text{CONCAT}\left(h_v^{(k-1)},\ \text{AGGREGATE}\left(\{h_u^{(k-1)} : u \in \mathcal{N}(v)\}\right)\right)\right)$$
+$$
+h_v^{(k)} = \sigma\left(W^{(k)} \cdot \text{CONCAT}\left(h_v^{(k-1)},\ \text{AGGREGATE}\left(\{h_u^{(k-1)} : u \in \mathcal{N}(v)\}\right)\right)\right)
+$$
 
 where $\mathcal{N}(v)$ is the set of neighbouring nodes, $W^{(k)}$ is the learnable weight matrix at layer $k$, and $\sigma$ is a non-linear activation. After $K$ layers, each node's representation $h_v^{(K)}$ encodes structural information from its $K$-hop neighbourhood, enabling the model to detect the multi-hop mule ring topology described in Case 3 above.
 
 For the heterogeneous multi-relational PesaLink graph (multiple node types, multiple edge types), **Relational Graph Convolutional Networks (R-GCNs)** [9] extend this formulation:
 
-$$h_i^{(l+1)} = \sigma\left(W_0^{(l)} h_i^{(l)} + \sum_{r \in \mathcal{R}} \sum_{j \in \mathcal{N}_i^r} \frac{1}{c_{i,r}} W_r^{(l)} h_j^{(l)}\right)$$
+$$
+h_i^{(l+1)} = \sigma\left(W_0^{(l)} h_i^{(l)} + \sum_{r \in \mathcal{R}} \sum_{j \in \mathcal{N}_i^r} \frac{1}{c_{i,r}} W_r^{(l)} h_j^{(l)}\right)
+$$
 
 where $W_r^{(l)}$ is a relation-specific weight matrix capturing the semantics of each edge type (transfer, device binding, IP connection, etc.). This allows the model to learn that a device-binding edge conveys different fraud information from a transfer edge.
 
@@ -396,7 +404,9 @@ where $W_r^{(l)}$ is a relation-specific weight matrix capturing the semantics o
 
 For scalability to the full PesaLink network, which handles over 500,000 transactions per month [5] with a graph size growing continuously, **ClusterGCN** [11] partitions the global transaction graph using the METIS algorithm into dense local sub-communities:
 
-$$V = [V_1, V_2, \dots, V_c]$$
+$$
+V = [V_1, V_2, \dots, V_c]
+$$
 
 Training proceeds on individual cluster batches, with intra-cluster edges preserved and inter-cluster edges dynamically restored through stochastic multi-cluster batching. This eliminates the "neighbourhood explosion" problem (where computing a single node's embedding requires fetching exponentially growing numbers of neighbours) and enables training on graphs with millions of nodes on bounded memory hardware.
 
@@ -406,11 +416,15 @@ Standard GNN training requires access to the full graph $\mathcal{G}$, which, in
 
 Federated Learning (FL) resolves this by inverting the training paradigm: data stays within each bank's secure infrastructure, and only encrypted model parameter updates (gradients or weight deltas) traverse the network to a central IPSL aggregation engine. The formal objective of the Federated Averaging (FedAvg) algorithm [12] is to minimise the global loss function:
 
-$$\min_w \sum_{k=1}^{K} \frac{n_k}{N} L_k(w)$$
+$$
+\min_w \sum_{k=1}^{K} \frac{n_k}{N} L_k(w)
+$$
 
 where $K$ is the number of participating banks, $n_k$ is the number of transaction nodes held by bank $k$, $N = \sum n_k$ is the total node count, and $L_k(w)$ is bank $k$'s local fraud detection loss. Each bank trains on its local graph $\mathcal{G}_k$, uploads its updated local weights $w_{t+1}^k$, and the coordinator computes:
 
-$$w_{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_{t+1}^k$$
+$$
+w_{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_{t+1}^k
+$$
 
 No raw transaction record, account identifier, or customer profile leaves any bank's perimeter.
 
@@ -422,7 +436,9 @@ Federated Learning introduces a structural free-rider problem: a malicious or lo
 
 Shapley values originate in cooperative game theory [22]. Given a set of $K$ participating banks and a model performance function $v: 2^{[K]} \to \mathbb{R}$ (e.g., global AUC-ROC on a held-out validation set), the Shapley value $\phi_k$ of bank $k$ is defined as its average **marginal contribution** across all possible orderings in which banks could have joined the federation:
 
-$$\phi_k = \sum_{S \subseteq [K] \setminus \{k\}} \frac{|S|! \, (K - |S| - 1)!}{K!} \Big[ v(S \cup \{k\}) - v(S) \Big]$$
+$$
+\phi_k = \sum_{S \subseteq [K] \setminus \{k\}} \frac{|S|! \, (K - |S| - 1)!}{K!} \Big[ v(S \cup \{k\}) - v(S) \Big]
+$$
 
 where $S$ ranges over all subsets of banks excluding $k$, and $v(S \cup \{k\}) - v(S)$ is the marginal improvement in global model performance attributable to including bank $k$'s gradient update in coalition $S$. In the PesaLink context, the characteristic function $v$ is evaluated on a privacy-safe global validation partition: the coordinator's TEE enclave reconstructs the global model for each coalition and measures AUC-ROC on a synthetic or public benchmark transaction set, without requiring any raw bank data.
 
@@ -439,11 +455,15 @@ The platform implements the **GTG-Shapley (Guided Truncation Gradient Shapley)**
 The GTG-Shapley procedure at each aggregation round $t$ proceeds as follows:
 
 1. **Gradient-Based Model Reconstruction**: Instead of running a full FedAvg training loop for each coalition $S$, the coordinator's Intel SGX enclave reconstructs an approximate coalition model $\hat{w}_S$ by applying the weighted sum of gradient updates from the banks in $S$ to the prior round's global model:
-$$\hat{w}_S = w_t + \sum_{k \in S} \Delta w_k$$
+$$
+\hat{w}_S = w_t + \sum_{k \in S} \Delta w_k
+$$
 This avoids $O(2^K)$ full training runs, reducing reconstruction cost to $O(K)$ gradient additions per sample.
 
 2. **Guided Monte Carlo Sampling**: Instead of sampling coalitions $S$ uniformly at random, the algorithm guides sampling towards coalitions that are most likely to produce high-variance Shapley estimates, i.e., coalitions where the marginal contribution of the next sampled bank is expected to be large. This is implemented via an Upper Confidence Bound (UCB) selection policy, borrowed directly from the **UCT (Upper Confidence Bound applied to Trees)** variant of Monte Carlo Tree Search [22], which balances the exploration of undersampled coalitions with the exploitation of coalitions known to produce informative marginal values:
-$$\text{UCB}(k, S) = \hat{\phi}_k^{(S)} + c \sqrt{\frac{\ln N_S}{n_{k,S}}}$$
+$$
+\text{UCB}(k, S) = \hat{\phi}_k^{(S)} + c \sqrt{\frac{\ln N_S}{n_{k,S}}}
+$$
 where $\hat{\phi}_k^{(S)}$ is the current estimated Shapley contribution of bank $k$ given coalition $S$, $N_S$ is the total number of samples drawn so far, $n_{k,S}$ is the number of times bank $k$ has been sampled in coalition $S$, and $c$ is an exploration coefficient. This UCT selection policy is precisely Monte Carlo Tree Search applied to the Shapley coalition space, the "tree" being the lattice of subsets $2^{[K]}$, with each level representing a coalition of a given size.
 
 3. **Within-Round Truncation**: If the reconstructed model $\hat{w}_S$ produces performance $v(\hat{w}_S)$ that falls below a truncation threshold $\tau$ (e.g., AUC-ROC < 0.50), the coalition is truncated and assigned $\phi_k = 0$ for the marginal bank, without further evaluation. This eliminates computationally expensive evaluations of low-quality or malicious coalitions.
@@ -456,7 +476,9 @@ Empirical results from the GTG-Shapley paper [24] demonstrate that this procedur
 
 The Shapley value $\phi_k^{(t)}$ computed at each round $t$ feeds into an **exponential moving average reputation score** for bank $k$:
 
-$$\rho_k^{(t)} = \lambda \cdot \rho_k^{(t-1)} + (1 - \lambda) \cdot \phi_k^{(t)}$$
+$$
+\rho_k^{(t)} = \lambda \cdot \rho_k^{(t-1)} + (1 - \lambda) \cdot \phi_k^{(t)}
+$$
 
 where $\lambda \in (0, 1)$ is a decay parameter that weights recent contributions more heavily. Banks with $\rho_k$ consistently near zero or negative (i.e., whose updates degrade global performance) are flagged for review; banks whose scores fall below a hard threshold $\rho_{\min}$ are automatically de-authorised from the next aggregation round by the coordinator's Hyperledger Besu smart contract, which emits a `ParticipantSlashed` event and decrements that bank's reputation stake. This mechanism implements a **Sybil-resistant, incentive-compatible federated network**, providing formal game-theoretic guarantees that rational participant banks maximise their own Shapley score (and thus their reputation) by submitting honest, high-quality gradient updates derived from genuine transaction data.
 
@@ -465,7 +487,9 @@ where $\lambda \in (0, 1)$ is a decay parameter that weights recent contribution
 Federated Learning alone does not constitute sufficient privacy protection, gradient updates can be reverse-engineered using **Deep Leakage from Gradients (DLG)** attacks to reconstruct the underlying training data [13]. The complete privacy stack requires:
 
 - **Differential Privacy (DP-SGD)** [14]: Gaussian noise calibrated to the (ε, δ)-privacy budget is injected into local gradient updates before transmission, mathematically preventing membership inference attacks. The noise is calibrated using gradient clipping to sensitivity bound $C$ and noise multiplier $\sigma$:
-$$\tilde{g} = \frac{1}{B}\left(\sum_{i \in B} \frac{g_i(x_i)}{\max(1, \|g_i(x_i)\|_2 / C)} + \mathcal{N}(0, \sigma^2 C^2 \mathbf{I})\right)$$
+$$
+\tilde{g} = \frac{1}{B}\left(\sum_{i \in B} \frac{g_i(x_i)}{\max(1, \|g_i(x_i)\|_2 / C)} + \mathcal{N}(0, \sigma^2 C^2 \mathbf{I})\right)
+$$
 
 - **Secure Multi-Party Computation (SMPC)** [15]: Local weight updates are decomposed into cryptographic secret shares before transmission. No individual aggregation node can reconstruct any bank's gradient contribution in isolation, providing information-theoretic security against a compromised aggregation hub.
 
