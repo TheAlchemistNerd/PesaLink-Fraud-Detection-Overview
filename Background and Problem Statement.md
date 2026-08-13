@@ -7,13 +7,13 @@
 
 Kenya's financial technology landscape occupies a singular position in global payments history. A nation that pioneered mobile money with M-Pesa in 2007 has, over the subsequent two decades, assembled one of the most sophisticated real-time payment ecosystems on the African continent. At the centre of the interbank dimension of this ecosystem sits **PesaLink**, operated by Integrated Payment Services Limited (IPSL), a wholly-owned subsidiary of the Kenya Bankers Association (KBA), connecting over 80 financial institutions including commercial banks, microfinance institutions, savings and credit co-operative organisations (SACCOs), and licensed fintech payment service providers (PSPs) [1].
 
-The PesaLink ecosystem, much like global financial networks, operates as a massive, dynamically evolving **scale-free, bipartite graph**. As demonstrated empirically by Saxena et al. (2021), banking transaction datasets naturally form highly skewed power-law degree distributions, where a vast majority of nodes (users) have very few connections, while a minority of 'hub' nodes (utility companies, payment aggregators) possess millions [25]. Furthermore, treating this data purely as a tabular ledger obscures its relational risk. By modeling interoperable payment data as bipartite graphs, institutions drastically improve loan screening and risk monitoring capabilities compared to isolated credit bureau metrics (Rishabh, 2026) [26].
+The PesaLink ecosystem, much like global financial networks, operates as a massive, dynamically evolving **scale-free, bipartite graph**. As demonstrated empirically by Saxena et al. [2], banking transaction datasets naturally form highly skewed power-law degree distributions, where a vast majority of nodes (users) have very few connections, while a minority of 'hub' nodes (utility companies, payment aggregators) possess millions. Furthermore, treating this data purely as a tabular ledger obscures its relational risk. By modeling interoperable payment data as bipartite graphs, institutions drastically improve loan screening and risk monitoring capabilities compared to isolated credit bureau metrics [3].
 
-However, this structural topology presents a severe challenge: **Graph Sparsity**. The vast majority of possible connections between accounts are non-existent. Traditional fraud detection cannot accurately correlate sparse data points. Graph-based link-prediction mitigates this by capturing indirect, higher-order pathways, allowing the detection of hidden, multi-hop money laundering rings even when explicit, direct transaction histories between suspicious entities are deliberately obfuscated (Wang et al., 2020) [27].
+However, this structural topology presents a severe challenge: **Graph Sparsity**. The vast majority of possible connections between accounts are non-existent. Traditional fraud detection cannot accurately correlate sparse data points. Graph-based link-prediction mitigates this by capturing indirect, higher-order pathways, allowing the detection of hidden, multi-hop money laundering rings even when explicit, direct transaction histories between suspicious entities are deliberately obfuscated [4].
 
 The maturity of this infrastructure is both its greatest strength and its most acute vulnerability. Real-time, 24/7 settlement removes the historical delay-buffer that compliance teams relied on and compresses the fraud detection window to near-zero. Each transaction must be scored, flagged, or cleared in the time it takes a user to receive an SMS confirmation, typically under two seconds. Fraudsters who previously had hours to move stolen funds across the banking system now operate in milliseconds.
 
-Against this backdrop, Kenya's banking regulators and courts have begun issuing increasingly urgent signals: the sector's current fraud detection architecture is structurally insufficient. The Central Bank of Kenya (CBK) **Bank Supervision Annual Report 2024** documented a **+130.72% year-on-year surge in reported fraud cases** and a **+264.08% explosion in net financial losses**, rising from KES 412 million to KES 1.50 billion in a single reporting period [2]. Simultaneously, the **High Court of Kenya at Machakos** issued a landmark ruling holding that a correct Personal Identification Number (PIN) is not, in itself, a sufficient defence for financial institutions against fraud liability; it ordered Safaricom to bear 60% and Diamond Trust Bank (DTB) 40% of KES 4.42 million stolen from a SIM-swap victim, specifically because the velocity and pattern of transactions should have triggered automated detection [3].
+Against this backdrop, Kenya's banking regulators and courts have begun issuing increasingly urgent signals: the sector's current fraud detection architecture is structurally insufficient. The Central Bank of Kenya (CBK) **Bank Supervision Annual Report 2024** documented a **+130.72% year-on-year surge in reported fraud cases** and a **+264.08% explosion in net financial losses**, rising from KES 412 million to KES 1.50 billion in a single reporting period [5]. Simultaneously, the **High Court of Kenya at Machakos** issued a landmark ruling holding that a correct Personal Identification Number (PIN) is not, in itself, a sufficient defence for financial institutions against fraud liability; it ordered Safaricom to bear 60% and Diamond Trust Bank (DTB) 40% of KES 4.42 million stolen from a SIM-swap victim, specifically because the velocity and pattern of transactions should have triggered automated detection [6].
 
 This document provides the research background and formal problem statement for the development of a **privacy-preserving, federated, graph-based fraud detection engine** for the PesaLink network, an architecture that satisfies simultaneously the CBK's operational risk mandates, the ODPC's data minimisation requirements under the Kenya Data Protection Act 2019, and the technical latency demands of a high-velocity real-time settlement rail.
 
@@ -23,17 +23,17 @@ This document provides the research background and formal problem statement for 
 
 ### 2.1 The National Payments System: Architecture and Hierarchy
 
-The Central Bank of Kenya (CBK) classifies Kenya's National Payment System (NPS) into two structural tiers based on throughput values and volumes [4]:
+The Central Bank of Kenya (CBK) classifies Kenya's National Payment System (NPS) into two structural tiers based on throughput values and volumes [7]:
 
-- **Large Value (Wholesale) Systems**: The **Kenya Electronic Payment and Settlement System (KEPSS)**, a Real-Time Gross Settlement (RTGS) system implemented on 29 July 2005, handles high-value interbank transfers settled individually and continuously in central bank reserve accounts. KEPSS is classified as a Systemically Important Payment System (SIPS) due to its macroeconomic criticality. Regional extensions include the East African Payment System (EAPS) for EAC cross-border flows and the Regional Payment and Settlement System (REPSS) for COMESA flows, both integrated into KEPSS [4].
+- **Large Value (Wholesale) Systems**: The **Kenya Electronic Payment and Settlement System (KEPSS)**, a Real-Time Gross Settlement (RTGS) system implemented on 29 July 2005, handles high-value interbank transfers settled individually and continuously in central bank reserve accounts. KEPSS is classified as a Systemically Important Payment System (SIPS) due to its macroeconomic criticality. Regional extensions include the East African Payment System (EAPS) for EAC cross-border flows and the Regional Payment and Settlement System (REPSS) for COMESA flows, both integrated into KEPSS [7].
 
 - **Low Value (Retail) Systems**: This tier includes the Automated Clearing House (ACH) for cheques and Electronic Funds Transfers (EFTs), payment card networks, mobile payment platforms, and critically, **PesaLink**, the instant interbank retail rail.
 
-PesaLink occupies a structurally unique position: a retail system by transaction size (KES 10 to KES 999,999 per transaction) that operates at wholesale clearing speeds. Unlike legacy EFT processing, which involves overnight batch cycles, PesaLink routes funds between banks in real time, with final settlement occurring twice daily through KEPSS net positions [5].
+PesaLink occupies a structurally unique position: a retail system by transaction size (KES 10 to KES 999,999 per transaction) that operates at wholesale clearing speeds. Unlike legacy EFT processing, which involves overnight batch cycles, PesaLink routes funds between banks in real time, with final settlement occurring twice daily through KEPSS net positions [8].
 
 ### 2.2 PesaLink: Operational Specifications and Access Channels
 
-PesaLink's central processing hub, operated by IPSL, functions as a **digital clearing switch**: an intermediary routing engine that receives transaction instructions from originating banks, validates counterparty account identifiers, and confirms fund availability before committing the credit to the recipient bank's ledger. No funds transit through IPSL's own balance sheet; the hub is purely an instruction router and settlement netting engine [1, 5].
+PesaLink's central processing hub, operated by IPSL, functions as a **digital clearing switch**: an intermediary routing engine that receives transaction instructions from originating banks, validates counterparty account identifiers, and confirms fund availability before committing the credit to the recipient bank's ledger. No funds transit through IPSL's own balance sheet; the hub is purely an instruction router and settlement netting engine [1], [8].
 
 ### 2.3 Institutional Stratification (The 3-Tier Paradigm)
 The PesaLink network consists of over 80 participating financial institutions, but volume and capital are highly asymmetrical. To mathematically model and deploy a viable hardware architecture, the ecosystem is stratified into three distinct tiers:
@@ -148,7 +148,7 @@ Each node $v \in \mathcal{V}$ carries a feature vector $``\mathbf{x}_v \in \math
 
 #### 3.2.4 Graph Structural Properties
 
-Bank transaction graphs exhibit three well-documented structural properties that distinguish them from social networks and require specialised modelling approaches [6]:
+Bank transaction graphs exhibit three well-documented structural properties that distinguish them from social networks and require specialised modelling approaches [9]:
 
 **Sparsity**: If $N$ is the total count of PesaLink-enrolled accounts, the maximum possible directed edges equal $N \times (N-1)$. In practice, any single account interacts with a microscopic fraction of all other accounts; the adjacency matrix is **near-empty**. This sparsity demands storage in **Compressed Sparse Row (CSR)** or **Coordinate (COO)** format rather than dense matrix representation, and motivates graph-specific sampling strategies over full-graph convolution.
 
@@ -298,7 +298,7 @@ Each mule account $``m_i``$ sends a single transfer to one of two "collection" a
 
 ### 5.1 CBK Quantitative Fraud Metrics
 
-According to the **Central Bank of Kenya Bank Supervision Annual Report 2024** and the associated **Financial Sector Stability Report**, the following escalation in fraud was recorded across the banking sector [2]:
+According to the **Central Bank of Kenya Bank Supervision Annual Report 2024** and the associated **Financial Sector Stability Report**, the following escalation in fraud was recorded across the banking sector [5]:
 
 | Metric | 2023 | 2024 | Year-on-Year Change |
 |---|---|---|---|
@@ -322,11 +322,11 @@ The card-specific fraud loss trajectory (+1,598.65% in one year) is particularly
 
 **Mule Account Syndicates**: Networks of dormant or fraudulently-opened accounts receive illicit funds which are then rapidly withdrawn via agents or ATMs. Mule nodes exhibit a distinctive **in-degree spike followed by rapid out-degree** in temporal graph analysis: high in-flow velocity, followed by a single terminal withdrawal edge at an agent node $``v_t``$.
 
-**Insider Collaboration**: Bank personnel abuse administrative privileges to bypass transaction limits or AML alerts. Forensic investigations suggest insider complicity in a notable proportion of high-value digital banking breaches [2]. In graph terms, insider attacks may be invisible to transaction-level models but detectable at the **administrative action graph** level, a secondary graph tracking system actions correlated with subsequent unusual transactions.
+**Insider Collaboration**: Bank personnel abuse administrative privileges to bypass transaction limits or AML alerts. Forensic investigations suggest insider complicity in a notable proportion of high-value digital banking breaches [5]. In graph terms, insider attacks may be invisible to transaction-level models but detectable at the **administrative action graph** level, a secondary graph tracking system actions correlated with subsequent unusual transactions.
 
 ### 5.3 Judicial Pressure: The DTB-Safaricom Landmark Ruling
 
-On 13 July 2026, the **High Court of Kenya at Machakos** upheld a ruling that fundamentally reframes institutional liability for digital fraud [3]. In a case involving coordinated SIM swap fraud resulting in the theft of KES 4.42 million, the court rejected the standard automated defence that "the transaction used the correct PIN and occurred within system limits." The court ruled that:
+On 13 July 2026, the **High Court of Kenya at Machakos** upheld a ruling that fundamentally reframes institutional liability for digital fraud [6]. In a case involving coordinated SIM swap fraud resulting in the theft of KES 4.42 million, the court rejected the standard automated defence that "the transaction used the correct PIN and occurred within system limits." The court ruled that:
 
 1. The **velocity and anomalous pattern** of transactions, multiple high-value transfers within minutes, constituted a detectable fraud signature that the institutions' systems should have flagged.
 2. Financial institutions are legally obligated to deploy **predictive, behaviour-aware fraud detection**, not merely reactive rule-based blocking.
@@ -340,7 +340,7 @@ This ruling creates a binding legal precedent that transforms graph-based anomal
 
 ### 6.1 The Kenya Data Protection Act 2019
 
-The **Data Protection Act, No. 24 of 2019 (DPA)** establishes the legal framework governing the processing of personal data in Kenya, enforced by the **Office of the Data Protection Commissioner (ODPC)** [7]. Financial institutions operating on the PesaLink network are classified simultaneously as **data controllers** (determining the purpose and means of processing) and **data processors** (actually performing the processing), subjecting them to the full scope of statutory obligations.
+The **Data Protection Act, No. 24 of 2019 (DPA)** establishes the legal framework governing the processing of personal data in Kenya, enforced by the **Office of the Data Protection Commissioner (ODPC)** [10]. Financial institutions operating on the PesaLink network are classified simultaneously as **data controllers** (determining the purpose and means of processing) and **data processors** (actually performing the processing), subjecting them to the full scope of statutory obligations.
 
 Key provisions with direct architectural implications for fraud detection systems:
 
@@ -357,11 +357,11 @@ Personal data may only be transferred outside Kenyan jurisdiction with explicit 
 
 ### 6.2 CBK Prudential Guidelines on Risk Management
 
-The CBK's **Prudential Guidelines on Risk Management and Corporate Governance** impose direct operational requirements on the fraud detection function [4]:
+The CBK's **Prudential Guidelines on Risk Management and Corporate Governance** impose direct operational requirements on the fraud detection function [7]:
 
 - **Section 3.3 (Operational Risk Management)**: Banks must maintain robust internal control structures capable of mitigating technological threats. The CBK explicitly treats cyber fraud as a material threat to capital adequacy, fraud losses must be provisioned as operational risk exposure and reported in capital adequacy calculations.
 
-- **FATF Grey-Listing Response**: Kenya's placement on the **Financial Action Task Force (FATF) grey list** (reflecting systemic Anti-Money Laundering and Counter-Financing of Terrorism deficiencies) compelled the CBK to require that all supervised institutions implement **automated, real-time transaction monitoring** with demonstrable anomaly detection capabilities. Manual post-hoc review is no longer acceptable as a primary control.
+- **FATF Grey-Listing Response**: Kenya's placement on the **Financial Action Task Force (FATF) grey list** [11] (reflecting systemic Anti-Money Laundering and Counter-Financing of Terrorism deficiencies) compelled the CBK to require that all supervised institutions implement **automated, real-time transaction monitoring** with demonstrable anomaly detection capabilities. Manual post-hoc review is no longer acceptable as a primary control.
 
 ### 6.3 The Regulatory Paradox
 
@@ -380,7 +380,7 @@ Conventional fraud detection architectures require one of these mandates to be v
 
 Traditional fraud detection, rule-based systems and tabular machine learning models (logistic regression, gradient-boosted trees, standard neural networks), evaluate each transaction as an isolated event, producing a fraud probability score based solely on the transaction's own feature vector. This approach is blind to **relational anomalies**: it cannot detect a mule account that receives 30 individually-normal transfers in 60 seconds, nor can it identify a sender whose device has just changed for the first time in three years.
 
-Furthermore, PesaLink transactions exhibit **extreme class imbalance**: fraudulent transactions account for less than 0.1% of total network volume. However, as evidenced by the CBK statistics documenting over KES 1.50 billion in net losses, although these fraudulent cases are incredibly infrequent, their individual financial severity and cumulative economic damage are massive. Standard cross-entropy loss functions catastrophically fail in this regime, as a model achieves artificially high accuracy (>99.9%) by classifying every transaction as legitimate, a strategy that generates no fraud detections at all. **Focal Loss** [8], which dynamically suppresses the gradient contribution of easy-to-classify legitimate transactions and forces learning on ambiguous fraud signals, is the required objective function.
+Furthermore, PesaLink transactions exhibit **extreme class imbalance**: fraudulent transactions account for less than 0.1% of total network volume. However, as evidenced by the CBK statistics documenting over KES 1.50 billion in net losses, although these fraudulent cases are incredibly infrequent, their individual financial severity and cumulative economic damage are massive. Standard cross-entropy loss functions catastrophically fail in this regime, as a model achieves artificially high accuracy (>99.9%) by classifying every transaction as legitimate, a strategy that generates no fraud detections at all. **Focal Loss** [12], which dynamically suppresses the gradient contribution of easy-to-classify legitimate transactions and forces learning on ambiguous fraud signals, is the required objective function.
 
 ### 7.2 Why Graph Neural Networks Are the Right Model Class
 
@@ -392,7 +392,7 @@ $$
 
 where $\mathcal{N}(v)$ is the set of neighbouring nodes, $W^{(k)}$ is the learnable weight matrix at layer $k$, and $\sigma$ is a non-linear activation. After $K$ layers, each node's representation $``h_v^{(K)}``$ encodes structural information from its $K$-hop neighbourhood, enabling the model to detect the multi-hop mule ring topology described in Case 3 above.
 
-For the heterogeneous multi-relational PesaLink graph (multiple node types, multiple edge types), **Relational Graph Convolutional Networks (R-GCNs)** [9] extend this formulation:
+For the heterogeneous multi-relational PesaLink graph (multiple node types, multiple edge types), **Relational Graph Convolutional Networks (R-GCNs)** [13] extend this formulation:
 
 $$
 h_i^{(l+1)} = \sigma\left(W_0^{(l)} h_i^{(l)} + \sum_{r \in \mathcal{R}} \sum_{j \in \mathcal{N}_i^r} \frac{1}{c_{i,r}} W_r^{(l)} h_j^{(l)}\right)
@@ -400,9 +400,9 @@ $$
 
 where $``W_r^{(l)}``$ is a relation-specific weight matrix capturing the semantics of each edge type (transfer, device binding, IP connection, etc.). This allows the model to learn that a device-binding edge conveys different fraud information from a transfer edge.
 
-**Graph Attention Networks (GAT)** [10] further refine this by replacing the uniform aggregation with a learnable attention mechanism, each neighbour's contribution is weighted by an attention coefficient $``\alpha_{ij}``$ computed from the feature similarity between nodes $i$ and $j$. In a PesaLink fraud context, this means the model learns to pay more attention to high-frequency counterparties and less to isolated, one-off transfers, without requiring manual feature engineering.
+**Graph Attention Networks (GAT)** [14] further refine this by replacing the uniform aggregation with a learnable attention mechanism, each neighbour's contribution is weighted by an attention coefficient $``\alpha_{ij}``$ computed from the feature similarity between nodes $i$ and $j$. In a PesaLink fraud context, this means the model learns to pay more attention to high-frequency counterparties and less to isolated, one-off transfers, without requiring manual feature engineering.
 
-For scalability to the full PesaLink network, which handles over 500,000 transactions per month [5] with a graph size growing continuously, **ClusterGCN** [11] partitions the global transaction graph using the METIS algorithm into dense local sub-communities:
+For scalability to the full PesaLink network, which handles over 500,000 transactions per month [8] with a graph size growing continuously, **ClusterGCN** [15] partitions the global transaction graph using the METIS algorithm into dense local sub-communities:
 
 $$
 V = [V_1, V_2, \dots, V_c]
@@ -414,7 +414,7 @@ Training proceeds on individual cluster batches, with intra-cluster edges preser
 
 Standard GNN training requires access to the full graph $\mathcal{G}$, which, in the cross-bank PesaLink context, means aggregating transaction data from all 80+ member institutions into a centralised repository. This is precisely what the DPA prohibits.
 
-Federated Learning (FL) resolves this by inverting the training paradigm: data stays within each bank's secure infrastructure, and only encrypted model parameter updates (gradients or weight deltas) traverse the network to a central IPSL aggregation engine. The formal objective of the Federated Averaging (FedAvg) algorithm [12] is to minimise the global loss function:
+Federated Learning (FL) resolves this by inverting the training paradigm: data stays within each bank's secure infrastructure, and only encrypted model parameter updates (gradients or weight deltas) traverse the network to a central IPSL aggregation engine. The formal objective of the Federated Averaging (FedAvg) algorithm [16] is to minimise the global loss function:
 
 $$
 \min_w \sum_{k=1}^{K} \frac{n_k}{N} L_k(w)
@@ -434,7 +434,7 @@ Federated Learning introduces a structural free-rider problem: a malicious or lo
 
 #### 7.4.1 The Shapley Value as a Fair Attribution Measure
 
-Shapley values originate in cooperative game theory [22]. Given a set of $K$ participating banks and a model performance function $v: 2^{[K]} \to \mathbb{R}$ (e.g., global AUC-ROC on a held-out validation set), the Shapley value $``\phi_k``$ of bank $k$ is defined as its average **marginal contribution** across all possible orderings in which banks could have joined the federation:
+Shapley values originate in cooperative game theory [17]. Given a set of $K$ participating banks and a model performance function $v: 2^{[K]} \to \mathbb{R}$ (e.g., global AUC-ROC on a held-out validation set), the Shapley value $``\phi_k``$ of bank $k$ is defined as its average **marginal contribution** across all possible orderings in which banks could have joined the federation:
 
 $$
 \phi_k = \sum_{S \subseteq [K] \setminus \{k\}} \frac{|S|! \, (K - |S| - 1)!}{K!} \Big[ v(S \cup \{k\}) - v(S) \Big]
@@ -442,7 +442,7 @@ $$
 
 where $S$ ranges over all subsets of banks excluding $k$, and $v(S \cup \{k\}) - v(S)$ is the marginal improvement in global model performance attributable to including bank $k$'s gradient update in coalition $S$. In the PesaLink context, the characteristic function $v$ is evaluated on a privacy-safe global validation partition: the coordinator's TEE enclave reconstructs the global model for each coalition and measures AUC-ROC on a synthetic or public benchmark transaction set, without requiring any raw bank data.
 
-This formulation guarantees three properties that make it suitable for a multi-bank regulatory context: (1) **Efficiency**: the sum of all Shapley values equals the total model improvement; (2) **Symmetry**: two banks whose gradient updates produce identical marginal improvements receive identical scores; and (3) **Null player**: a bank whose updates contribute nothing receives $``\phi_k = 0``$. Ghorbani and Zou (ICML 2019) [23] demonstrated that this metric is the unique fair data valuation measure satisfying all three axioms simultaneously, and showed that Monte Carlo estimation of Shapley values is both statistically consistent and computationally tractable for neural network models.
+This formulation guarantees three properties that make it suitable for a multi-bank regulatory context: (1) **Efficiency**: the sum of all Shapley values equals the total model improvement; (2) **Symmetry**: two banks whose gradient updates produce identical marginal improvements receive identical scores; and (3) **Null player**: a bank whose updates contribute nothing receives $``\phi_k = 0``$. Ghorbani and Zou [18] demonstrated that this metric is the unique fair data valuation measure satisfying all three axioms simultaneously, and showed that Monte Carlo estimation of Shapley values is both statistically consistent and computationally tractable for neural network models.
 
 #### 7.4.2 The Computational Challenge: NP-Hardness and Graph Complexity
 
@@ -450,7 +450,7 @@ Exact computation of Shapley values requires evaluating $v(S)$ for every subset 
 
 #### 7.4.3 Monte Carlo Approximation with Guided Truncation (GTG-Shapley)
 
-The platform implements the **GTG-Shapley (Guided Truncation Gradient Shapley)** algorithm [24], an approximation method that reconstructs partial federated models from gradient updates rather than retraining from scratch for each coalition, and applies guided Monte Carlo sampling with within-round and between-round truncation to dramatically reduce the number of evaluations required.
+The platform implements the **GTG-Shapley (Guided Truncation Gradient Shapley)** algorithm [19], an approximation method that reconstructs partial federated models from gradient updates rather than retraining from scratch for each coalition, and applies guided Monte Carlo sampling with within-round and between-round truncation to dramatically reduce the number of evaluations required.
 
 The GTG-Shapley procedure at each aggregation round $t$ proceeds as follows:
 
@@ -460,7 +460,7 @@ $$
 $$
 This avoids $O(2^K)$ full training runs, reducing reconstruction cost to $O(K)$ gradient additions per sample.
 
-2. **Guided Monte Carlo Sampling**: Instead of sampling coalitions $S$ uniformly at random, the algorithm guides sampling towards coalitions that are most likely to produce high-variance Shapley estimates, i.e., coalitions where the marginal contribution of the next sampled bank is expected to be large. This is implemented via an Upper Confidence Bound (UCB) selection policy, borrowed directly from the **UCT (Upper Confidence Bound applied to Trees)** variant of Monte Carlo Tree Search [22], which balances the exploration of undersampled coalitions with the exploitation of coalitions known to produce informative marginal values:
+2. **Guided Monte Carlo Sampling**: Instead of sampling coalitions $S$ uniformly at random, the algorithm guides sampling towards coalitions that are most likely to produce high-variance Shapley estimates, i.e., coalitions where the marginal contribution of the next sampled bank is expected to be large. This is implemented via an Upper Confidence Bound (UCB) selection policy, borrowed directly from the **UCT (Upper Confidence Bound applied to Trees)** variant of Monte Carlo Tree Search [17], which balances the exploration of undersampled coalitions with the exploitation of coalitions known to produce informative marginal values:
 $$
 \text{UCB}(k, S) = \hat{\phi}_k^{(S)} + c \sqrt{\frac{\ln N_S}{n_{k,S}}}
 $$
@@ -470,7 +470,7 @@ where $``\hat{\phi}_k^{(S)}``$ is the current estimated Shapley contribution of 
 
 4. **Between-Round Warm-Starting**: Shapley estimates from round $t-1$ initialise the UCT tree for round $t$, so that estimation converges faster as the federation matures and gradient update quality stabilises.
 
-Empirical results from the GTG-Shapley paper [24] demonstrate that this procedure approximates true Shapley values to within 5% relative error using as few as $O(K \log K)$ model evaluations, reducing the computational cost from $O(2^{80})$ to approximately $O(80 \times 7) \approx 560$ evaluations per round in the PesaLink scenario.
+Empirical results from the GTG-Shapley paper [19] demonstrate that this procedure approximates true Shapley values to within 5% relative error using as few as $O(K \log K)$ model evaluations, reducing the computational cost from $O(2^{80})$ to approximately $O(80 \times 7) \approx 560$ evaluations per round in the PesaLink scenario.
 
 #### 7.4.4 Reputation Scoring and Data-Poisoning Defence
 
@@ -484,18 +484,18 @@ where $\lambda \in (0, 1)$ is a decay parameter that weights recent contribution
 
 ### 7.5 Privacy Amplification: Differential Privacy, SMPC, and TEEs
 
-Federated Learning alone does not constitute sufficient privacy protection, gradient updates can be reverse-engineered using **Deep Leakage from Gradients (DLG)** attacks to reconstruct the underlying training data [13]. The complete privacy stack requires:
+Federated Learning alone does not constitute sufficient privacy protection, gradient updates can be reverse-engineered using **Deep Leakage from Gradients (DLG)** attacks to reconstruct the underlying training data [20]. The complete privacy stack requires:
 
-- **Differential Privacy (DP-SGD)** [14]: Gaussian noise calibrated to the (ε, δ)-privacy budget is injected into local gradient updates before transmission, mathematically preventing membership inference attacks. The noise is calibrated using gradient clipping to sensitivity bound $C$ and noise multiplier $\sigma$:
+- **Differential Privacy (DP-SGD)** [21]: Gaussian noise calibrated to the (ε, δ)-privacy budget is injected into local gradient updates before transmission, mathematically preventing membership inference attacks. The noise is calibrated using gradient clipping to sensitivity bound $C$ and noise multiplier $\sigma$:
 $$
 \tilde{g} = \frac{1}{B}\left(\sum_{i \in B} \frac{g_i(x_i)}{\max(1, \|g_i(x_i)\|_2 / C)} + \mathcal{N}(0, \sigma^2 C^2 \mathbf{I})\right)
 $$
 
-- **Secure Multi-Party Computation (SMPC)** [15]: Local weight updates are decomposed into cryptographic secret shares before transmission. No individual aggregation node can reconstruct any bank's gradient contribution in isolation, providing information-theoretic security against a compromised aggregation hub.
+- **Secure Multi-Party Computation (SMPC)** [22]: Local weight updates are decomposed into cryptographic secret shares before transmission. No individual aggregation node can reconstruct any bank's gradient contribution in isolation, providing information-theoretic security against a compromised aggregation hub.
 
-- **Optional Extension: zk-SNARKs for Verifiable Gradient Integrity in Decentralised (P2P) Deployments** [21]: In scenarios where participating banks refuse to grant IPSL or the KBA any coordination role, the central aggregator can be eliminated entirely in favour of a Peer-to-Peer (P2P) Gossip-based or ring-topology Federated Learning protocol. In this configuration, there is no trusted third party to verify that gradient updates submitted by each bank are honest and correctly clipped. zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge) address this verification gap. Before a bank transmits its SMPC gradient shares to its ring peers, its Intel TDX enclave generates a zk-SNARK proof demonstrating, in zero-knowledge, that: (1) the secret shares reconstruct to a gradient vector bounded within the DP-SGD clipping norm $C$; (2) the gradient was computed using the authorised GNN architecture; and (3) no individual training record was used more than once (replay protection). The receiving peer verifies the proof via a permissioned Hyperledger Besu smart contract using the `ecPairing` BN-254 precompile, requiring under 5 milliseconds. **This entire zk-SNARK generation and on-chain verification pipeline runs asynchronously, off the critical transaction settlement path.** No proof is generated or verified inline during PesaLink's sub-50 ms clearing window. Instead, batches of cleared transactions are grouped hourly, and a single aggregated batch proof is submitted to the ledger for regulatory auditability under CBK and ODPC guidelines. The ISO 20022 clearing payload carries no cryptographic proof data, preserving microsecond-level transport execution.
+- **Optional Extension: zk-SNARKs for Verifiable Gradient Integrity in Decentralised (P2P) Deployments** [23]: In scenarios where participating banks refuse to grant IPSL or the KBA any coordination role, the central aggregator can be eliminated entirely in favour of a Peer-to-Peer (P2P) Gossip-based or ring-topology Federated Learning protocol. In this configuration, there is no trusted third party to verify that gradient updates submitted by each bank are honest and correctly clipped. zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge) address this verification gap. Before a bank transmits its SMPC gradient shares to its ring peers, its Intel TDX enclave generates a zk-SNARK proof demonstrating, in zero-knowledge, that: (1) the secret shares reconstruct to a gradient vector bounded within the DP-SGD clipping norm $C$; (2) the gradient was computed using the authorised GNN architecture; and (3) no individual training record was used more than once (replay protection). The receiving peer verifies the proof via a permissioned Hyperledger Besu smart contract using the `ecPairing` BN-254 precompile, requiring under 5 milliseconds. **This entire zk-SNARK generation and on-chain verification pipeline runs asynchronously, off the critical transaction settlement path.** No proof is generated or verified inline during PesaLink's sub-50 ms clearing window. Instead, batches of cleared transactions are grouped hourly, and a single aggregated batch proof is submitted to the ledger for regulatory auditability under CBK and ODPC guidelines. The ISO 20022 clearing payload carries no cryptographic proof data, preserving microsecond-level transport execution.
 
-- **Trusted Execution Environments: Intel TDX at the Bank Node** [16]: At each participating bank, the local GNN training process, DP-SGD clipping, and SMPC share generation run inside an **Intel Trust Domain Extensions (TDX)** enclave. TDX operates at the Virtual Machine level, creating a hardware-isolated Trust Domain whose memory pages are encrypted by the CPU using AES-XTS before they are written to DRAM. Unlike legacy SGX, which confines individual application threads to small Processor Reserved Memory regions (typically 128 MB or 256 MB), TDX can allocate gigabytes of encrypted RAM, accommodating the full PyTorch Geometric graph data structures and GraphBLAS-based SpMM kernels without page-swapping overhead. This is critical because Kenya's participating banks range from Tier-1 institutions handling tens of millions of monthly transactions to SACCOs and MFIs with more modest but equally heterogeneous graph workloads. TDX's VM-level boundary also requires zero code refactoring, enabling rapid deployment across the diverse core banking platforms (T24, Flexcube, Finacle) in use across the IPSL member network. The central IPSL aggregation coordinator uses **Intel SGX** for fine-grained key management and zk-SNARK proof verification, where its tighter process-level trust boundary is the appropriate control. Together, this hybrid TDX (bank nodes) and SGX (coordinator) deployment satisfies the ODPC's Privacy by Design mandate under Section 41 of the DPA 2019, ensuring that raw gradients never exist in unencrypted form outside a hardware trust boundary.
+- **Trusted Execution Environments: Intel TDX at the Bank Node** [24]: At each participating bank, the local GNN training process, DP-SGD clipping, and SMPC share generation run inside an **Intel Trust Domain Extensions (TDX)** enclave. TDX operates at the Virtual Machine level, creating a hardware-isolated Trust Domain whose memory pages are encrypted by the CPU using AES-XTS before they are written to DRAM. Unlike legacy SGX, which confines individual application threads to small Processor Reserved Memory regions (typically 128 MB or 256 MB), TDX can allocate gigabytes of encrypted RAM, accommodating the full PyTorch Geometric graph data structures and GraphBLAS-based SpMM kernels without page-swapping overhead. This is critical because Kenya's participating banks range from Tier-1 institutions handling tens of millions of monthly transactions to SACCOs and MFIs with more modest but equally heterogeneous graph workloads. TDX's VM-level boundary also requires zero code refactoring, enabling rapid deployment across the diverse core banking platforms (T24, Flexcube, Finacle) in use across the IPSL member network. The central IPSL aggregation coordinator uses **Intel SGX** for fine-grained key management and zk-SNARK proof verification, where its tighter process-level trust boundary is the appropriate control. Together, this hybrid TDX (bank nodes) and SGX (coordinator) deployment satisfies the ODPC's Privacy by Design mandate under Section 41 of the DPA 2019, ensuring that raw gradients never exist in unencrypted form outside a hardware trust boundary.
 
 ---
 
@@ -526,49 +526,56 @@ Kenya's interbank payment infrastructure represents one of the most sophisticate
 
 ## References
 
-[1] Integrated Payment Services Limited (IPSL). *PesaLink: About Us*. https://pesalink.co.ke/about-us (Accessed July 2026).
+[1] Integrated Payment Services Limited (IPSL), "PesaLink: About Us," [Online]. Available: https://pesalink.co.ke/about-us (accessed Jul. 2026).
 
-[2] Central Bank of Kenya. *Bank Supervision Annual Report 2024 / Financial Sector Stability Report 2024*. Nairobi: Central Bank of Kenya. https://www.centralbank.go.ke/reports/bank-supervision-and-banking-sector-reports/
+[2] A. Saxena et al., "The Banking Transactions Dataset and its Comparative Analysis with Scale-free Networks," ResearchGate, 2021.
 
-[3] Tech-Ish. (2026, July 13). *Court Rules a Correct PIN Is Not a Defence: Safaricom and DTB to Pay KES 4.4M SIM Swap Victim*. https://tech-ish.com/2026/07/13/safaricom-dtb-sim-swap-ruling/
+[3] K. Rishabh, "Beyond the bureau: Interoperable payment data for loan screening and monitoring," ScienceDirect, 2026.
 
-[4] Central Bank of Kenya. *National Payments System*. https://www.centralbank.go.ke/national-payments-system/ (Accessed July 2026).
+[4] H. Wang et al., "A Bipartite Graph-Based Recommender for Crowdfunding with Sparse Data," ResearchGate, 2020.
 
-[5] Africa Nenda Foundation. (2022). *The State of Instant and Inclusive Payment Systems in Africa: PesaLink Case Study*. https://africanenda.org/wp-content/uploads/EN_SIIPS_Casestudy_Pesalink.pdf
+[5] Central Bank of Kenya, "Bank Supervision Annual Report 2024 / Financial Sector Stability Report 2024," Nairobi: Central Bank of Kenya, 2024. [Online]. Available: https://www.centralbank.go.ke/reports/bank-supervision-and-banking-sector-reports/
 
-[6] Wang, X., et al. (2021). *The Banking Transactions Dataset and its Comparative Analysis with Scale-free Networks*. ResearchGate. https://www.researchgate.net/publication/354778270_The_Banking_Transactions_Dataset_and_its_Comparative_Analysis_with_Scale-free_Networks
+[6] Tech-Ish, "Court Rules a Correct PIN Is Not a Defence: Safaricom and DTB to Pay KES 4.4M SIM Swap Victim," Jul. 13, 2026. [Online]. Available: https://tech-ish.com/2026/07/13/safaricom-dtb-sim-swap-ruling/
 
-[7] National Council for Law Reporting. (2019). *The Data Protection Act, No. 24 of 2019*. Nairobi: Government Printer of Kenya.
+[7] Central Bank of Kenya, "National Payments System." [Online]. Available: https://www.centralbank.go.ke/national-payments-system/ (accessed Jul. 2026).
 
-[8] Lin, T. Y., Goyal, P., Girshick, R., He, K., & Dollár, P. (2017). Focal loss for dense object detection. *Proceedings of the IEEE International Conference on Computer Vision (ICCV)*, 2980–2988.
+[8] Africa Nenda Foundation, "The State of Instant and Inclusive Payment Systems in Africa: PesaLink Case Study," 2022. [Online]. Available: https://africanenda.org/wp-content/uploads/EN_SIIPS_Casestudy_Pesalink.pdf
 
-[9] Schlichtkrull, M., Kipf, T. N., Bloem, P., van den Berg, R., Titov, I., & Welling, M. (2018). Modeling relational data with graph convolutional networks. *European Semantic Web Conference (ESWC)*, 593–607.
+[9] X. Wang et al., "The Banking Transactions Dataset and its Comparative Analysis with Scale-free Networks," ResearchGate, 2021.
 
-[10] Veličković, P., Cucurull, G., Casanova, A., Romero, A., Liò, P., & Bengio, Y. (2018). Graph attention networks. *International Conference on Learning Representations (ICLR)*. https://arxiv.org/abs/1710.10903
+[10] National Council for Law Reporting, "The Data Protection Act, No. 24 of 2019," Nairobi: Government Printer of Kenya, 2019.
 
-[11] Chiang, W. L., Liu, X., Si, S., Li, Y., Bengio, S., & Hsieh, C. J. (2019). Cluster-GCN: An efficient algorithm for training deep and large graph convolutional networks. *Proceedings of the 25th ACM SIGKDD*, 257–266. https://arxiv.org/abs/1905.07953
+[11] Financial Action Task Force (FATF), "Kenya Mutual Evaluation Follow-up Report," Paris: FATF, 2024. [Online]. Available: https://www.fatf-gafi.org/en/countries/detail/Kenya.html
 
-[12] McMahan, B., Moore, E., Ramage, D., Hampson, S., & Arcas, B. A. (2017). Communication-efficient learning of deep networks from decentralized data. *Proceedings of the 20th International Conference on Artificial Intelligence and Statistics (AISTATS)*, PMLR 54:1273–1282. https://proceedings.mlr.press/v54/mcmahan17a.html
+[12] T. Y. Lin, P. Goyal, R. Girshick, K. He, and P. Dollár, "Focal loss for dense object detection," in Proc. IEEE Int. Conf. Comput. Vis. (ICCV), 2017, pp. 2980–2988.
 
-[13] Zhao, B., Mopuri, K. R., & Bilen, H. (2020). idLG: Improved Deep Leakage from Gradients. *arXiv:2001.02610*.
+[13] M. Schlichtkrull, T. N. Kipf, P. Bloem, R. van den Berg, I. Titov, and M. Welling, "Modeling relational data with graph convolutional networks," in European Semantic Web Conf. (ESWC), 2018, pp. 593–607.
 
-[14] Abadi, M., Chu, A., Goodfellow, I., McMahan, H. B., Mironov, I., Talwar, K., & Zhang, L. (2016). Deep learning with differential privacy. *Proceedings of the 2016 ACM SIGSAC CCS*, 308–318.
+[14] P. Veličković, G. Cucurull, A. Casanova, A. Romero, P. Liò, and Y. Bengio, "Graph attention networks," in Int. Conf. Learn. Represent. (ICLR), 2018. [Online]. Available: https://arxiv.org/abs/1710.10903
 
-[15] Bonawitz, K., Ivanov, V., Kreuter, B., Marcedone, A., McMahan, H. B., Patel, S., Ramage, D., Segal, A., & Seth, K. (2017). Practical secure aggregation for privacy-preserving machine learning. *Proceedings of the 2017 ACM SIGSAC CCS*, 1175–1191.
+[15] W. L. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. J. Hsieh, "Cluster-GCN: An efficient algorithm for training deep and large graph convolutional networks," in Proc. 25th ACM SIGKDD, 2019, pp. 257–266.
 
-[16] Subramanyan, P., Sinha, S., Lebedev, I., Devadas, S., & Seshia, S. A. (2017). A formal foundation for secure remote attestation. *Proceedings of the 2017 ACM SIGSAC CCS*, 2435–2449.
+[16] B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. Arcas, "Communication-efficient learning of deep networks from decentralized data," in Proc. 20th Int. Conf. Artif. Intell. Stat. (AISTATS), 2017, PMLR 54:1273–1282.
 
-[17] Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learning on large graphs. *Advances in Neural Information Processing Systems (NeurIPS)*, 30. https://arxiv.org/abs/1706.02216
+[17] L. Kocsis and C. Szepesvári, "Bandit based Monte-Carlo planning," in European Conf. Mach. Learn. (ECML 2006), 2006, pp. 282–293.
 
-[18] Financial Action Task Force (FATF). (2024). *Kenya Mutual Evaluation Follow-up Report*. Paris: FATF. https://www.fatf-gafi.org/en/countries/detail/Kenya.html
+[18] A. Ghorbani and J. Zou, "Data Shapley: Equitable valuation of data for machine learning," in Proc. 36th Int. Conf. Mach. Learn. (ICML 2019), 2019, PMLR 97:2242–2251.
 
-[19] Office of the Data Protection Commissioner (ODPC). *Data Protection Act, 2019: Regulatory Guidance*. Nairobi: Government of Kenya. https://odpc.go.ke
+[19] J. Xu et al., "Federated learning for healthcare informatics," J. Healthcare Informatics Res., vol. 5, pp. 1–19, 2021; and T. Song, Y. Tong, and S. Wei, "GTG-Shapley: Efficient and accurate participant contribution evaluation in federated learning," ACM Trans. Intell. Syst. Technol., vol. 13, no. 4, Art. no. 60, 2022.
 
-[20] Tahir, M., et al. (2024). Federated learning models for privacy-preserving fraud analytics across global banking networks. *ResearchGate preprint*. https://www.researchgate.net/publication/397779653_Federated_Learning_Models_for_Privacy-Preserving_Fraud_Analytics_Across_Global_Banking_Networks
-[21] Ben-Sasson, E., Chiesa, A., Genkin, D., Tromer, E., & Virza, M. (2013). SNARKs for C: Verifying program executions succinctly and in zero knowledge. *Advances in Cryptology, CRYPTO 2013*, LNCS 8043. https://eprint.iacr.org/2013/507
-[22] Kocsis, L., & Szepesvári, C. (2006). Bandit based Monte-Carlo planning. *European Conference on Machine Learning (ECML 2006)*. Lecture Notes in Computer Science, vol. 4212, pp. 282–293. Springer, Berlin. https://link.springer.com/chapter/10.1007/11871842_29
-[23] Ghorbani, A., & Zou, J. (2019). Data Shapley: Equitable valuation of data for machine learning. *Proceedings of the 36th International Conference on Machine Learning (ICML 2019)*, PMLR 97:2242–2251. https://arxiv.org/abs/1904.02868
-[24] Xu, J., Glicksberg, B. S., Su, C., Walker, P., Bian, J., & Wang, F. (2021). Federated learning for healthcare informatics. *Journal of Healthcare Informatics Research*, 5, 1–19; and: Song, T., Tong, Y., & Wei, S. (2022). GTG-Shapley: Efficient and accurate participant contribution evaluation in federated learning. *ACM Transactions on Intelligent Systems and Technology (TIST)*, 13(4), Article 60. https://arxiv.org/abs/2109.02053
-[25] Saxena, A., et al. (2021). *The Banking Transactions Dataset and its Comparative Analysis with Scale-free Networks*. ResearchGate.
-[26] Rishabh, K. (2026). *Beyond the bureau: Interoperable payment data for loan screening and monitoring*. ScienceDirect.
-[27] Wang, H., et al. (2020). *A Bipartite Graph-Based Recommender for Crowdfunding with Sparse Data*. ResearchGate.
+[20] B. Zhao, K. R. Mopuri, and H. Bilen, "idLG: Improved Deep Leakage from Gradients," arXiv:2001.02610, 2020.
+
+[21] M. Abadi et al., "Deep learning with differential privacy," in Proc. 2016 ACM SIGSAC CCS, 2016, pp. 308–318.
+
+[22] K. Bonawitz et al., "Practical secure aggregation for privacy-preserving machine learning," in Proc. 2017 ACM SIGSAC CCS, 2017, pp. 1175–1191.
+
+[23] E. Ben-Sasson, A. Chiesa, D. Genkin, E. Tromer, and M. Virza, "SNARKs for C: Verifying program executions succinctly and in zero knowledge," in Advances in Cryptology, CRYPTO 2013, LNCS 8043, 2013.
+
+[24] P. Subramanyan, S. Sinha, I. Lebedev, S. Devadas, and S. A. Seshia, "A formal foundation for secure remote attestation," in Proc. 2017 ACM SIGSAC CCS, 2017, pp. 2435–2449.
+
+[25] W. L. Hamilton, R. Ying, and J. Leskovec, "Inductive representation learning on large graphs," in Advances in Neural Information Processing Systems (NeurIPS), vol. 30, 2017.
+
+[26] Office of the Data Protection Commissioner (ODPC), "Data Protection Act, 2019: Regulatory Guidance," Nairobi: Government of Kenya. [Online]. Available: https://odpc.go.ke
+
+[27] M. Tahir et al., "Federated learning models for privacy-preserving fraud analytics across global banking networks," ResearchGate preprint, 2024.
