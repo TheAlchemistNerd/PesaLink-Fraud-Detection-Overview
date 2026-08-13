@@ -122,15 +122,15 @@ Edges encode **relationships** between nodes. In PesaLink, edges are directed (m
 | **Device-Account binding** | $``e_{ad}^{\text{uses}}``$ | Account $``v_a``$ was accessed using device $``v_d``$ |
 | **Session-Account binding** | $``e_{as}^{\text{initiates}}``$ | Account $``v_a``$ initiated a USSD session $``v_s``$ |
 | **Terminal-Account binding** | $``e_{at}^{\text{withdraws}}``$ | Account $``v_a``$ performed a cash withdrawal at terminal $``v_t``$ |
-| **IP-Account binding** | $``e_{an}^{\text{connects_from}}``$ | Account $``v_a``$ was accessed from IP subnet $``v_n``$ |
+| **IP-Account binding** | $``e_{an}^{\text{connects\_from}}``$ | Account $``v_a``$ was accessed from IP subnet $``v_n``$ |
 
 Each transfer edge $``e_{ij}``$ carries an **edge feature vector**:
 
-$$
-\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since_last}}, \text{channel_code}, \text{sequence_rank}]
-$$
+$$``
+\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since\_last}}, \text{channel\_code}, \text{sequence\_rank}]
+$$``
 
-where $``\Delta t_{\text{since_last}}``$ is the time elapsed since the previous transaction from the same source node, a critical temporal feature for detecting **velocity attacks** (automated high-frequency transfers designed to exhaust an account balance before fraud is detected).
+where $``\Delta t_{\text{since\_last}}``$ is the time elapsed since the previous transaction from the same source node, a critical temporal feature for detecting **velocity attacks** (automated high-frequency transfers designed to exhaust an account balance before fraud is detected).
 
 #### 3.2.3 The Node Feature Matrix $\mathbf{X}$: "What do we know about each entity?"
 
@@ -254,7 +254,7 @@ The following nine scenarios span the full breadth of PesaLink activity, from ro
   - $``r_1, r_2, r_3``$ have degree centrality = 0 in prior graph snapshots (dormant).
   - The $k$-hop shortest path $``d(\text{Bernard}, r_i)``$ = ∞ in all prior snapshots.
   - Amounts: KES 390K, 380K, 199K, deliberately structured below the KES 500K enhanced scrutiny threshold.
-- **Velocity signature**: $``\Delta t_{\text{since_last}}``$ for Bernard's account = 18 days (he transacts infrequently). The inter-transaction time within this fraud burst = 90s and 160s, an extreme temporal compression against the historical baseline.
+- **Velocity signature**: $``\Delta t_{\text{since\_last}}``$ for Bernard's account = 18 days (he transacts infrequently). The inter-transaction time within this fraud burst = 90s and 160s, an extreme temporal compression against the historical baseline.
 - **2-hop neighbourhood analysis**: At $``t_0 + 370\text{s}``$, the 2-hop neighbourhood of $``v_{\text{Bernard}}``$ suddenly includes three new dormant leaf nodes connected via high-amount edges, structurally indistinguishable from a mule network aggregation target. The R-GCN flags this as a high-anomaly embedding.
 - **What a single-bank rule misses**: Each individual transfer (KES 390K, 380K, 199K) is below the automated blocking threshold. The rule system sees three "valid" transactions. The GNN sees a new device binding at $``t_0``$, a velocity explosion from $\Delta t = 18\ \text{days}$ to $\Delta t = 90\ \text{seconds}$, and three structural links to zero-history nodes, collectively a known fraud motif.
 
@@ -286,7 +286,7 @@ Each mule account $``m_i``$ sends a single transfer to one of two "collection" a
 **Graph-theoretic description**:
 - **New counterparty edges**: $``e_{\text{Collins} \to \text{Daniel}}^{\text{transfer}}``$ and $``e_{\text{Collins} \to \text{FriendAcct}}^{\text{transfer}}``$, both recipient nodes have shortest-path distance $d \gt 1$ from $``v_{\text{Collins}}``$ in prior history (never directly transacted before, though Collins may share 2-hop neighbours with Daniel via other family transactions).
 - **Device consistency** (key distinction from fraud): The device node $``v_{d_C}``$ (Collins's regular Samsung, IMEI stable for 3 years) is unchanged. There is no device substitution event. The same IP subnet and geolocation cell are observed.
-- **Velocity anomaly**: $``\Delta t_{\text{since_last}} = 4\ \text{days}``$ → two transfers within 8 minutes, a compression from Collins's normal behaviour. The velocity score spikes.
+- **Velocity anomaly**: $``\Delta t_{\text{since\_last}} = 4\ \text{days}``$ → two transfers within 8 minutes, a compression from Collins's normal behaviour. The velocity score spikes.
 - **Amount anomaly**: KES 150,000 and KES 80,000 are significantly above Collins's 30-day average transaction size of KES 22,000.
 - **Why this could score highly for fraud**: New counterparties + velocity compression + above-average amounts. A rule-based system would almost certainly block or flag these transfers.
 - **Why the GNN should not classify it as fraud**: The 2-hop subgraph reveals that Daniel's account is connected (via prior transactions) to other nodes in Collins's neighbourhood, family members who share a common transaction history. The device node $``v_{d_C}``$ has zero anomaly (no substitution). The amounts, while large, are within the account's historical maximum (Collins made a KES 200,000 property deposit 14 months ago). The GNN's attention mechanism, conditioned on the full neighbourhood embedding, suppresses the false positive by weighing the device stability and 2-hop relationship against the velocity signal.
