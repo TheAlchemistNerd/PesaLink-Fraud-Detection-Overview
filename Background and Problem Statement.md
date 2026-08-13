@@ -126,9 +126,7 @@ Edges encode **relationships** between nodes. In PesaLink, edges are directed (m
 
 Each transfer edge $``e_{ij}``$ carries an **edge feature vector**:
 
-$$``
-\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since\_last}}, \text{channel\_code}, \text{sequence\_rank}]
-$$``
+$``\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since\_last}}, \text{channel\_code}, \text{sequence\_rank}]``$
 
 where $``\Delta t_{\text{since\_last}}``$ is the time elapsed since the previous transaction from the same source node, a critical temporal feature for detecting **velocity attacks** (automated high-frequency transfers designed to exhaust an account balance before fraud is detected).
 
@@ -386,17 +384,13 @@ Furthermore, PesaLink transactions exhibit **extreme class imbalance**: fraudule
 
 Graph Neural Networks (GNNs) directly address the relational blindness of tabular models. By operating on the transaction graph $\mathcal{G}$, a GNN propagates information between structurally connected nodes through **message passing**, each node aggregates representations from its neighbourhood:
 
-$$
-h_v^{(k)} = \sigma\left(W^{(k)} \cdot \text{CONCAT}\left(h_v^{(k-1)},\ \text{AGGREGATE}\left(\{h_u^{(k-1)} : u \in \mathcal{N}(v)\}\right)\right)\right)
-$$
+$``h_v^{(k)} = \sigma\left(W^{(k)} \cdot \text{CONCAT}\left(h_v^{(k-1)},\ \text{AGGREGATE}\left(\{h_u^{(k-1)} : u \in \mathcal{N}(v)\}\right)\right)\right)``$
 
 where $\mathcal{N}(v)$ is the set of neighbouring nodes, $W^{(k)}$ is the learnable weight matrix at layer $k$, and $\sigma$ is a non-linear activation. After $K$ layers, each node's representation $``h_v^{(K)}``$ encodes structural information from its $K$-hop neighbourhood, enabling the model to detect the multi-hop mule ring topology described in Case 3 above.
 
 For the heterogeneous multi-relational PesaLink graph (multiple node types, multiple edge types), **Relational Graph Convolutional Networks (R-GCNs)** [13] extend this formulation:
 
-$$
-h_i^{(l+1)} = \sigma\left(W_0^{(l)} h_i^{(l)} + \sum_{r \in \mathcal{R}} \sum_{j \in \mathcal{N}_i^r} \frac{1}{c_{i,r}} W_r^{(l)} h_j^{(l)}\right)
-$$
+$``h_i^{(l+1)} = \sigma\left(W_0^{(l)} h_i^{(l)} + \sum_{r \in \mathcal{R}} \sum_{j \in \mathcal{N}_i^r} \frac{1}{c_{i,r}} W_r^{(l)} h_j^{(l)}\right)``$
 
 where $``W_r^{(l)}``$ is a relation-specific weight matrix capturing the semantics of each edge type (transfer, device binding, IP connection, etc.). This allows the model to learn that a device-binding edge conveys different fraud information from a transfer edge.
 
@@ -404,9 +398,7 @@ where $``W_r^{(l)}``$ is a relation-specific weight matrix capturing the semanti
 
 For scalability to the full PesaLink network, which handles over 500,000 transactions per month [8] with a graph size growing continuously, **ClusterGCN** [15] partitions the global transaction graph using the METIS algorithm into dense local sub-communities:
 
-$$
-V = [V_1, V_2, \dots, V_c]
-$$
+$``V = [V_1, V_2, \dots, V_c]``$
 
 Training proceeds on individual cluster batches, with intra-cluster edges preserved and inter-cluster edges dynamically restored through stochastic multi-cluster batching. This eliminates the "neighbourhood explosion" problem (where computing a single node's embedding requires fetching exponentially growing numbers of neighbours) and enables training on graphs with millions of nodes on bounded memory hardware.
 
@@ -416,15 +408,11 @@ Standard GNN training requires access to the full graph $\mathcal{G}$, which, in
 
 Federated Learning (FL) resolves this by inverting the training paradigm: data stays within each bank's secure infrastructure, and only encrypted model parameter updates (gradients or weight deltas) traverse the network to a central IPSL aggregation engine. The formal objective of the Federated Averaging (FedAvg) algorithm [16] is to minimise the global loss function:
 
-$$
-\min_w \sum_{k=1}^{K} \frac{n_k}{N} L_k(w)
-$$
+$``\min_w \sum_{k=1}^{K} \frac{n_k}{N} L_k(w)``$
 
 where $K$ is the number of participating banks, $``n_k``$ is the number of transaction nodes held by bank $k$, $``N = \sum n_k``$ is the total node count, and $``L_k(w)``$ is bank $k$'s local fraud detection loss. Each bank trains on its local graph $``\mathcal{G}_k``$, uploads its updated local weights $``w_{t+1}^k``$, and the coordinator computes:
 
-$$
-w_{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_{t+1}^k
-$$
+$``w_{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_{t+1}^k``$
 
 No raw transaction record, account identifier, or customer profile leaves any bank's perimeter.
 
@@ -436,9 +424,7 @@ Federated Learning introduces a structural free-rider problem: a malicious or lo
 
 Shapley values originate in cooperative game theory [17]. Given a set of $K$ participating banks and a model performance function $v: 2^{[K]} \to \mathbb{R}$ (e.g., global AUC-ROC on a held-out validation set), the Shapley value $``\phi_k``$ of bank $k$ is defined as its average **marginal contribution** across all possible orderings in which banks could have joined the federation:
 
-$$
-\phi_k = \sum_{S \subseteq [K] \setminus \{k\}} \frac{|S|! \, (K - |S| - 1)!}{K!} \Big[ v(S \cup \{k\}) - v(S) \Big]
-$$
+$``\phi_k = \sum_{S \subseteq [K] \setminus \{k\}} \frac{|S|! \, (K - |S| - 1)!}{K!} \Big[ v(S \cup \{k\}) - v(S) \Big]``$
 
 where $S$ ranges over all subsets of banks excluding $k$, and $v(S \cup \{k\}) - v(S)$ is the marginal improvement in global model performance attributable to including bank $k$'s gradient update in coalition $S$. In the PesaLink context, the characteristic function $v$ is evaluated on a privacy-safe global validation partition: the coordinator's TEE enclave reconstructs the global model for each coalition and measures AUC-ROC on a synthetic or public benchmark transaction set, without requiring any raw bank data.
 
@@ -455,15 +441,15 @@ The platform implements the **GTG-Shapley (Guided Truncation Gradient Shapley)**
 The GTG-Shapley procedure at each aggregation round $t$ proceeds as follows:
 
 1. **Gradient-Based Model Reconstruction**: Instead of running a full FedAvg training loop for each coalition $S$, the coordinator's Intel SGX enclave reconstructs an approximate coalition model $``\hat{w}_S``$ by applying the weighted sum of gradient updates from the banks in $S$ to the prior round's global model:
-$$
-\hat{w}_S = w_t + \sum_{k \in S} \Delta w_k
-$$
+
+$``\hat{w}_S = w_t + \sum_{k \in S} \Delta w_k``$
+
 This avoids $O(2^K)$ full training runs, reducing reconstruction cost to $O(K)$ gradient additions per sample.
 
 2. **Guided Monte Carlo Sampling**: Instead of sampling coalitions $S$ uniformly at random, the algorithm guides sampling towards coalitions that are most likely to produce high-variance Shapley estimates, i.e., coalitions where the marginal contribution of the next sampled bank is expected to be large. This is implemented via an Upper Confidence Bound (UCB) selection policy, borrowed directly from the **UCT (Upper Confidence Bound applied to Trees)** variant of Monte Carlo Tree Search [17], which balances the exploration of undersampled coalitions with the exploitation of coalitions known to produce informative marginal values:
-$$
-\text{UCB}(k, S) = \hat{\phi}_k^{(S)} + c \sqrt{\frac{\ln N_S}{n_{k,S}}}
-$$
+
+$``\text{UCB}(k, S) = \hat{\phi}_k^{(S)} + c \sqrt{\frac{\ln N_S}{n_{k,S}}}``$
+
 where $``\hat{\phi}_k^{(S)}``$ is the current estimated Shapley contribution of bank $k$ given coalition $S$, $``N_S``$ is the total number of samples drawn so far, $``n_{k,S}``$ is the number of times bank $k$ has been sampled in coalition $S$, and $c$ is an exploration coefficient. This UCT selection policy is precisely Monte Carlo Tree Search applied to the Shapley coalition space, the "tree" being the lattice of subsets $2^{[K]}$, with each level representing a coalition of a given size.
 
 3. **Within-Round Truncation**: If the reconstructed model $``\hat{w}_S``$ produces performance $``v(\hat{w}_S)``$ that falls below a truncation threshold $\tau$ (e.g., AUC-ROC \lt 0.50), the coalition is truncated and assigned $``\phi_k = 0``$ for the marginal bank, without further evaluation. This eliminates computationally expensive evaluations of low-quality or malicious coalitions.
@@ -476,9 +462,7 @@ Empirical results from the GTG-Shapley paper [19] demonstrate that this procedur
 
 The Shapley value $``\phi_k^{(t)}``$ computed at each round $t$ feeds into an **exponential moving average reputation score** for bank $k$:
 
-$$
-\rho_k^{(t)} = \lambda \cdot \rho_k^{(t-1)} + (1 - \lambda) \cdot \phi_k^{(t)}
-$$
+$``\rho_k^{(t)} = \lambda \cdot \rho_k^{(t-1)} + (1 - \lambda) \cdot \phi_k^{(t)}``$
 
 where $\lambda \in (0, 1)$ is a decay parameter that weights recent contributions more heavily. Banks with $``\rho_k``$ consistently near zero or negative (i.e., whose updates degrade global performance) are flagged for review; banks whose scores fall below a hard threshold $``\rho_{\min}``$ are automatically de-authorised from the next aggregation round by the coordinator's Hyperledger Besu smart contract, which emits a `ParticipantSlashed` event and decrements that bank's reputation stake. This mechanism implements a **Sybil-resistant, incentive-compatible federated network**, providing formal game-theoretic guarantees that rational participant banks maximise their own Shapley score (and thus their reputation) by submitting honest, high-quality gradient updates derived from genuine transaction data.
 
@@ -487,9 +471,8 @@ where $\lambda \in (0, 1)$ is a decay parameter that weights recent contribution
 Federated Learning alone does not constitute sufficient privacy protection, gradient updates can be reverse-engineered using **Deep Leakage from Gradients (DLG)** attacks to reconstruct the underlying training data [20]. The complete privacy stack requires:
 
 - **Differential Privacy (DP-SGD)** [21]: Gaussian noise calibrated to the (ε, δ)-privacy budget is injected into local gradient updates before transmission, mathematically preventing membership inference attacks. The noise is calibrated using gradient clipping to sensitivity bound $C$ and noise multiplier $\sigma$:
-$$
-\tilde{g} = \frac{1}{B}\left(\sum_{i \in B} \frac{g_i(x_i)}{\max(1, \|g_i(x_i)\|_2 / C)} + \mathcal{N}(0, \sigma^2 C^2 \mathbf{I})\right)
-$$
+
+$``\tilde{g} = \frac{1}{B}\left(\sum_{i \in B} \frac{g_i(x_i)}{\max(1, \|g_i(x_i)\|_2 / C)} + \mathcal{N}(0, \sigma^2 C^2 \mathbf{I})\right)``$
 
 - **Secure Multi-Party Computation (SMPC)** [22]: Local weight updates are decomposed into cryptographic secret shares before transmission. No individual aggregation node can reconstruct any bank's gradient contribution in isolation, providing information-theoretic security against a compromised aggregation hub.
 
