@@ -126,9 +126,7 @@ Edges encode **relationships** between nodes. In PesaLink, edges are directed (m
 
 Each transfer edge $``e_{ij}``$ carries an **edge feature vector**:
 
-$$``
-\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since\_last}}, \text{channel\_code}, \text{sequence\_rank}]
-``$$
+$``\mathbf{e}_{ij} = [\text{amount}, \Delta t_{\text{since\_last}}, \text{channel\_code}, \text{sequence\_rank}]``$
 
 where $``\Delta t_{\text{since\_last}}``$ is the time elapsed since the previous transaction from the same source node, a critical temporal feature for detecting **velocity attacks** (automated high-frequency transfers designed to exhaust an account balance before fraud is detected).
 
