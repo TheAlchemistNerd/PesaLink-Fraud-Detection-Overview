@@ -13,7 +13,7 @@ However, this structural topology presents a severe challenge: **Graph Sparsity*
 
 The maturity of this infrastructure is both its greatest strength and its most acute vulnerability. Real-time, 24/7 settlement removes the historical delay-buffer that compliance teams relied on and compresses the fraud detection window to near-zero. Each transaction must be scored, flagged, or cleared in the time it takes a user to receive an SMS confirmation, typically under two seconds. Fraudsters who previously had hours to move stolen funds across the banking system now operate in milliseconds.
 
-Against this backdrop, Kenya's banking regulators and courts have begun issuing increasingly urgent signals: the sector's current fraud detection architecture is structurally insufficient. The Central Bank of Kenya (CBK) **Bank Supervision Annual Report 2024** documented a **+130.72% year-on-year surge in reported fraud cases** and a **+264.08% explosion in net financial losses**, rising from KES 412 million to KES 1.50 billion in a single reporting period [5]. Simultaneously, the **High Court of Kenya at Machakos** issued a landmark ruling holding that a correct Personal Identification Number (PIN) is not, in itself, a sufficient defence for financial institutions against fraud liability; it ordered Safaricom to bear 60% and Diamond Trust Bank (DTB) 40% of KES 4.42 million stolen from a SIM-swap victim, specifically because the velocity and pattern of transactions should have triggered automated detection [6].
+Against this backdrop, Kenya's banking regulators and courts have begun issuing increasingly urgent signals: the sector's current fraud detection architecture is structurally insufficient. The Central Bank of Kenya (CBK) **Kenya Financial Sector Stability Report 2025, published by the Central Bank of Kenya and the Financial Sector Regulators Forum,** documented a **+130.72% year-on-year surge in reported fraud cases** and a **+286.98% explosion in actual cyber fraud losses**, rising from KES 412 million to KES 1.594 billion in a single reporting period [5]. Simultaneously, the **High Court of Kenya at Machakos** issued a landmark ruling holding that a correct Personal Identification Number (PIN) is not, in itself, a sufficient defence for financial institutions against fraud liability; it ordered Safaricom to bear 60% and Diamond Trust Bank (DTB) 40% of KES 4.42 million stolen from a SIM-swap victim, specifically because the velocity and pattern of transactions should have triggered automated detection [6].
 
 This document provides the research background and formal problem statement for the development of a **privacy-preserving, federated, graph-based fraud detection engine** for the PesaLink network, an architecture that satisfies simultaneously the CBK's operational risk mandates, the ODPC's data minimisation requirements under the Kenya Data Protection Act 2019, and the technical latency demands of a high-velocity real-time settlement rail.
 
@@ -296,13 +296,13 @@ Each mule account $``m_i``$ sends a single transfer to one of two "collection" a
 
 ### 5.1 CBK Quantitative Fraud Metrics
 
-According to the **Central Bank of Kenya Bank Supervision Annual Report 2024** and the associated **Financial Sector Stability Report**, the following escalation in fraud was recorded across the banking sector [5]:
+According to the **Central Bank of Kenya Kenya Financial Sector Stability Report 2025, published by the Central Bank of Kenya and the Financial Sector Regulators Forum,** and the associated **Financial Sector Stability Report**, the following escalation in fraud was recorded across the banking sector [5]:
 
 | Metric | 2023 | 2024 | Year-on-Year Change |
 |---|---|---|---|
 | Total Reported Fraud Cases | 153 | 353 | **+130.72%** |
 | Total Financial Exposure Value | KES 680.9 million | KES 1.90 billion | **+179.04%** |
-| Net Financial Defalcation Losses | KES 412.0 million | KES 1.50 billion | **+264.08%** |
+| Actual Banking-Sector Cyber Fraud Losses | KES 412.0 million | KES 1.594 billion | **+286.98%** |
 | Card-Specific Fraud Losses | KES 15.50 million | KES 263.29 million | **+1,598.65%** |
 | Identity Theft / Impersonation Losses | KES 33.16 million | KES 199.00 million | **+500.12%** |
 | Mobile Banking Vector Incidents | Baseline | 146 cases | N/A |
@@ -378,7 +378,7 @@ Conventional fraud detection architectures require one of these mandates to be v
 
 Traditional fraud detection, rule-based systems and tabular machine learning models (logistic regression, gradient-boosted trees, standard neural networks), evaluate each transaction as an isolated event, producing a fraud probability score based solely on the transaction's own feature vector. This approach is blind to **relational anomalies**: it cannot detect a mule account that receives 30 individually-normal transfers in 60 seconds, nor can it identify a sender whose device has just changed for the first time in three years.
 
-Furthermore, PesaLink transactions exhibit **extreme class imbalance**: fraudulent transactions account for less than 0.1% of total network volume. However, as evidenced by the CBK statistics documenting over KES 1.50 billion in net losses, although these fraudulent cases are incredibly infrequent, their individual financial severity and cumulative economic damage are massive. Standard cross-entropy loss functions catastrophically fail in this regime, as a model achieves artificially high accuracy (>99.9%) by classifying every transaction as legitimate, a strategy that generates no fraud detections at all. **Focal Loss** [12], which dynamically suppresses the gradient contribution of easy-to-classify legitimate transactions and forces learning on ambiguous fraud signals, is the required objective function.
+Furthermore, PesaLink transactions exhibit **extreme class imbalance**: fraudulent transactions account for less than 0.1% of total network volume. However, as evidenced by the CBK statistics documenting over KES 1.594 billion in actual cyber fraud losses, although these fraudulent cases are incredibly infrequent, their individual financial severity and cumulative economic damage are massive. Standard cross-entropy loss functions catastrophically fail in this regime, as a model achieves artificially high accuracy (>99.9%) by classifying every transaction as legitimate, a strategy that generates no fraud detections at all. **Focal Loss** [12], which dynamically suppresses the gradient contribution of easy-to-classify legitimate transactions and forces learning on ambiguous fraud signals, is the required objective function.
 
 ### 7.2 Why Graph Neural Networks Are the Right Model Class
 
@@ -537,7 +537,7 @@ Kenya's interbank payment infrastructure represents one of the most sophisticate
 
 [4] H. Wang et al., "A Bipartite Graph-Based Recommender for Crowdfunding with Sparse Data," ResearchGate, 2020.
 
-[5] Central Bank of Kenya, "Bank Supervision Annual Report 2024 / Financial Sector Stability Report 2024," Nairobi: Central Bank of Kenya, 2024. [Online]. Available: https://www.centralbank.go.ke/reports/bank-supervision-and-banking-sector-reports/
+[5] Central Bank of Kenya, "Kenya Financial Sector Stability Report 2025, published by the Central Bank of Kenya and the Financial Sector Regulators Forum, / Financial Sector Stability Report 2024," Nairobi: Central Bank of Kenya, 2024. [Online]. Available: https://www.centralbank.go.ke/reports/bank-supervision-and-banking-sector-reports/
 
 [6] Tech-Ish, "Court Rules a Correct PIN Is Not a Defence: Safaricom and DTB to Pay KES 4.4M SIM Swap Victim," Jul. 13, 2026. [Online]. Available: https://tech-ish.com/2026/07/13/safaricom-dtb-sim-swap-ruling/
 
